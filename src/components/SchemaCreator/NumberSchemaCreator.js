@@ -317,18 +317,12 @@ class NumberSchemaCreator extends React.Component {
         </FormItem>
         <FormItem label="ui">
           <Select defaultValue={ this.state.numberSchema.ui } onChange={ this.uiChange }>
-            {/* { */}
             <Option value="ui">UI</Option>
-            {/* } */}
           </Select>
         </FormItem>
         <FormItem label="enum">
           <Checkbox defaultValue={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
-          {
-            this.state.enumStatus ?
-            <TextArea value={ this.state.numberSchema.enum } onInput={ this.enumValueInput }></TextArea> :
-            <TextArea disabled value={ this.state.numberSchema.enum } onInput={ this.enumValueInput }></TextArea>
-          }
+          <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchema.enum } onInput={ this.enumValueInput }></TextArea>
         </FormItem>
         <FormItem label="最小值">
           <Input onInput={ this.minimumInput }></Input>

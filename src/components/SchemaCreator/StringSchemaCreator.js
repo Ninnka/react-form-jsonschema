@@ -276,23 +276,13 @@ class StringSchemaCreator extends React.Component {
         </FormItem>
         <FormItem label="format">
           <Checkbox defaultValue={ this.state.formatStatus } onChange={ this.formatStatusChange }>使用format</Checkbox>
-          {
-            this.state.formatStatus ?
-            <Select value={ this.state.stringSchema.format } onChange={ this.formatTypeChange } allowClear>
-              {
-                StringSchemaCreator.formatList.map((ele, index, arr) => {
-                  return <Option key={ ele + index } value={ ele }>{ ele }</Option>
-                })
-              }
-            </Select> :
-            <Select disabled value={ this.state.stringSchema.format } onChange={ this.formatTypeChange } allowClear>
-              {
-                StringSchemaCreator.formatList.map((ele, index, arr) => {
-                  return <Option key={ ele + index } value={ ele }>{ ele }</Option>
-                })
-              }
-            </Select>
-          }
+          <Select disabled={ !this.state.formatStatus } value={ this.state.stringSchema.format } onChange={ this.formatTypeChange } allowClear>
+            {
+              StringSchemaCreator.formatList.map((ele, index, arr) => {
+                return <Option key={ ele + index } value={ ele }>{ ele }</Option>
+              })
+            }
+          </Select>
         </FormItem>
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>

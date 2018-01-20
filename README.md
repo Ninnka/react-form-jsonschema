@@ -48,15 +48,25 @@
     - 选择所属的对象
     - 设置title
     - 设置description
-    - 可选的数组成员（additional,items为对象）
-    - 固定成员（items为数组）
-    - 设置items，一个对象，成员都按照对象内的描述来创建
+    - 设置default
+    - 设置固定成员（items为数组）
+      - 可删除固定成员
+    - 设置可选成员（items为对象）
+      - 可以重置已设置的items
       - items可设置一下key
         - default
         - enum
           - 使用enum时可设置uniqueItems(成员是否唯一)
+    - 设置items，一个对象，成员都按照对象内的描述来创建
 
 ## Update Log
+
+### 2018-01-20
+
+- 完善构造array类型的表单
+- 完善新增固定成员
+- 完善设置可选成员
+- 小部分代码优化
 
 ### 2018-01-19
 

@@ -9,6 +9,7 @@ import ObjectSchemaCreator from '@components/SchemaCreator/ObjectSchemaCreator';
 import StringSchemaCreator from '@components/SchemaCreator/StringSchemaCreator';
 import NumberSchemaCreator from '@components/SchemaCreator/NumberSchemaCreator';
 import BooleanSchemaCreator from '@components/SchemaCreator/BooleanSchemaCreator';
+import ArraySchemaCreator from '@components/SchemaCreator/ArraySchemaCreator';
 
 // * antd组件
 import {
@@ -114,7 +115,7 @@ class JsonSchema extends React.Component {
               }></NumberSchemaCreator>
             </div>
           </TabPane>
-          <TabPane tab="创建Boolean" key="5">
+          <TabPane tab="创建Boolean" key="4">
             <div className={ styles.jsonSchemaTabPane }>
               <BooleanSchemaCreator properties={
                 this.state.JSONSchema.properties
@@ -122,7 +123,15 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               }></BooleanSchemaCreator>
             </div></TabPane>
-          <TabPane tab="创建Array" key="4"></TabPane>
+          <TabPane tab="创建Array" key="5">
+            <div className={ styles.jsonSchemaTabPane }>
+              <ArraySchemaCreator properties={
+                this.state.JSONSchema.properties
+              } addNewProperties={
+                this.addNewProperties
+              }></ArraySchemaCreator>
+            </div>
+          </TabPane>
         </Tabs>
       </div>
     );
