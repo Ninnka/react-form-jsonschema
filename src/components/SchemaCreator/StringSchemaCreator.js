@@ -25,9 +25,11 @@ class StringSchemaCreator extends React.Component {
       title: '',
       description: '',
       default: '',
-      formDataValue: '',
       owner: '',
       ui: ''
+    },
+    stringSchemaAddition: {
+      format: ''
     }
   }
 
@@ -72,24 +74,34 @@ class StringSchemaCreator extends React.Component {
 
   resetForm = () => {
     this.setState({
+      formatStatus: false,
       stringSchema: {
         key: '',
         title: '',
         description: '',
         default: '',
-        formDataValue: '',
         owner: '',
         ui: ''
+      },
+      stringSchemaAddition: {
+        format: ''
       }
     });
   }
 
   confirmForm = () => {
     console.log('confirmForm');
-    this.props.addNewProperties({
+    if (!this.state.stringSchema.key) {
+      return;
+    }
+    let data = {
       ...this.state.stringSchema,
       type: 'string'
-    });
+    };
+    if (this.state.formatStatus) {
+      data.format = this.state.stringSchemaAddition.format;
+    }
+    this.props.addNewProperties(data);
   }
 
   ownerChange = (value) => {
@@ -152,18 +164,6 @@ class StringSchemaCreator extends React.Component {
     });
   }
 
-  formDataValueInput = (event) => {
-    let tmpValue = event.target.value;
-    this.setState((prevState, props) => {
-      return {
-        stringSchema: {
-          ...prevState.stringSchema,
-          formDataValue: tmpValue
-        }
-      };
-    });
-  }
-
   minLengthInput = (event) => {
     let tmpValue = event.target.value;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
@@ -171,7 +171,7 @@ class StringSchemaCreator extends React.Component {
         return {
           stringSchema: {
             ...prevState.stringSchema,
-            minLength: tmpValue
+            minLength: Number(tmpValue)
           }
         };
       });
@@ -189,38 +189,37 @@ class StringSchemaCreator extends React.Component {
     let checked = event.target.checked;
     this.setState((prevState, props) => {
       let data = {
-        ...prevState.stringSchema
-      }
+        ...prevState.stringSchemaAddition,
+      };
       if (!checked) {
-        delete data.format;
-      } else {
         data.format = '';
       }
       return {
-        stringSchema: data,
+        stringSchemaAddition: data,
         formatStatus: checked
       };
     });
   }
 
   formatTypeChange = (value) => {
-    if (value) {
-      this.setState((prevState, props) => {
-        return {
-          stringSchema: {
-            ...prevState.stringSchema,
-            format: value
-          }
-        };
-      });
-    } else {
-      this.setState((prevState, props) => {
-        delete prevState.stringSchema.format;
-        return {
-          stringSchema: prevState.stringSchema
-        };
-      });
-    }
+    // if (value) {
+    this.setState((prevState, props) => {
+      return {
+        stringSchemaAddition: {
+          ...prevState.stringSchemaAddition,
+          format: value
+        }
+      };
+    });
+    // }
+    //  else {
+    //   this.setState((prevState, props) => {
+    //     delete prevState.stringSchema.format;
+    //     return {
+    //       stringSchema: prevState.stringSchema
+    //     };
+    //   });
+    // }
   }
 
   uiChange = (value) => {
@@ -241,7 +240,7 @@ class StringSchemaCreator extends React.Component {
     return (
       <Form>
         <FormItem label="选择所属对象">
-          <Select defaultValue={ this.state.stringSchema.owner } onChange={ this.ownerChange }>
+          <Select value={ this.state.stringSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
                 return <Option key={ ele + index } value={ ele }>{ ele }</Option>
@@ -250,33 +249,28 @@ class StringSchemaCreator extends React.Component {
           </Select>
         </FormItem>
         <FormItem label="key">
-          <Input onInput={ this.keyInput }></Input>
+          <Input value={ this.state.stringSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
         <FormItem label="title">
-          <Input onInput={ this.titleInput }></Input>
+          <Input value={ this.state.stringSchema.title } onInput={ this.titleInput }></Input>
         </FormItem>
         <FormItem label="description">
-          <Input onInput={ this.descriptionInput }></Input>
+          <Input value={ this.state.stringSchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
         <FormItem label="default">
-          <Input onInput={ this.defaultInput }></Input>
-        </FormItem>
-        <FormItem label="formDataValue">
-          <Input onInput={ this.formDataValueInput }></Input>
+          <Input value={ this.state.stringSchema.default } onInput={ this.defaultInput }></Input>
         </FormItem>
         <FormItem label="ui">
-          <Select defaultValue={ this.state.stringSchema.ui } onChange={ this.uiChange }>
-            {/* { */}
+          <Select value={ this.state.stringSchema.ui } onChange={ this.uiChange }>
             <Option value="ui">UI</Option>
-            {/* } */}
           </Select>
         </FormItem>
         <FormItem label="最小长度">
-          <Input onInput={ this.minLengthInput }></Input>
+          <Input value={ this.state.stringSchema.minLength } onInput={ this.minLengthInput }></Input>
         </FormItem>
         <FormItem label="format">
-          <Checkbox defaultValue={ this.state.formatStatus } onChange={ this.formatStatusChange }>使用format</Checkbox>
-          <Select disabled={ !this.state.formatStatus } value={ this.state.stringSchema.format } onChange={ this.formatTypeChange } allowClear>
+          <Checkbox checked={ this.state.formatStatus } onChange={ this.formatStatusChange }>使用format</Checkbox>
+          <Select disabled={ !this.state.formatStatus } value={ this.state.stringSchemaAddition.format } onChange={ this.formatTypeChange } allowClear>
             {
               StringSchemaCreator.formatList.map((ele, index, arr) => {
                 return <Option key={ ele + index } value={ ele }>{ ele }</Option>

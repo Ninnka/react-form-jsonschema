@@ -71,12 +71,15 @@ class ObjectSchemaCreator extends React.Component {
   }
 
   confirmForm = () => {
-    console.log('confirmForm');
+    if (!this.state.objectSchema.key) {
+      return;
+    }
     this.props.addNewProperties({
       ...this.state.objectSchema,
       type: 'object',
       properties: {}
     });
+    setTimeout(this.resetForm);
   }
 
   ownerChange = (value) => {
@@ -145,7 +148,7 @@ class ObjectSchemaCreator extends React.Component {
     return (
       <Form>
         <FormItem label="选择所属对象">
-          <Select defaultValue={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
+          <Select value={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
                 return <Option key={ ele + index } value={ ele }>{ ele }</Option>
@@ -154,16 +157,16 @@ class ObjectSchemaCreator extends React.Component {
           </Select>
         </FormItem>
         <FormItem label="key">
-          <Input onInput={ this.keyInput }></Input>
+          <Input value={ this.state.objectSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
         <FormItem label="title">
-          <Input onInput={ this.titleInput }></Input>
+          <Input value={ this.state.objectSchema.title } onInput={ this.titleInput }></Input>
         </FormItem>
         <FormItem label="description">
-          <Input onInput={ this.descriptionInput }></Input>
+          <Input value={ this.state.objectSchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
         <FormItem label="required">
-          <Input onInput={ this.requiredInput }></Input>
+          <Input value={ this.state.objectSchema.required } onInput={ this.requiredInput }></Input>
         </FormItem>
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>

@@ -23,6 +23,7 @@ const InputGroup = Input.Group;
 class ArraySchemaCreator extends React.Component {
 
   state = {
+    additionalItemsStatus: false,
     fixedItemStatus: false,
     itemEnumStatus: false,
     ownerList: [],
@@ -34,7 +35,7 @@ class ArraySchemaCreator extends React.Component {
       owner: '',
       ui: ''
     },
-    additionalItem: {},
+    additionalItems: {},
     fixedItemsList: [],
     newFixedItem: {
       key: '',
@@ -85,6 +86,9 @@ class ArraySchemaCreator extends React.Component {
 
   resetForm = () => {
     this.setState({
+      additionalItemsStatus: false,
+      fixedItemStatus: false,
+      itemEnumStatus: false,
       arraySchema: {
         key: '',
         title: '',
@@ -93,7 +97,7 @@ class ArraySchemaCreator extends React.Component {
         owner: '',
         ui: ''
       },
-      additionalItem: {},
+      additionalItems: {},
       fixedItemsList: [],
       newFixedItem: {
         key: '',
@@ -107,10 +111,21 @@ class ArraySchemaCreator extends React.Component {
 
   confirmForm = () => {
     console.log('confirmForm');
-    this.props.addNewProperties({
+    if (!this.state.arraySchema.key) {
+      return;
+    }
+    let data = {
       ...this.state.arraySchema,
       type: 'array'
-    });
+    };
+    if (this.state.fixedItemStatus) {
+      data.additionalItems = this.state.additionalItems;
+      data.items = this.state.fixedItemsList;
+    } else {
+      data.items = this.state.additionalItems;
+    }
+    this.props.addNewProperties(data);
+    setTimeout(this.resetForm, 0);
   }
 
   ownerChange = (value) => {
@@ -176,13 +191,6 @@ class ArraySchemaCreator extends React.Component {
     });
   }
 
-  fixedItemStatusChange = (event) => {
-    let checked = event.target.checked;
-    this.setState({
-      fixedItemStatus: checked
-    });
-  }
-
   uiChange = (value) => {
     console.log('uiChange value:', value);
     this.setState((prevState, props) => {
@@ -200,8 +208,8 @@ class ArraySchemaCreator extends React.Component {
   itemAttrsChange = (param) => {
     this.setState((prevState, props) => {
       return {
-        additionalItem: {
-          ...prevState.additionalItem,
+        additionalItems: {
+          ...prevState.additionalItems,
           [param.attr]: param.value
         }
       }
@@ -209,18 +217,38 @@ class ArraySchemaCreator extends React.Component {
   }
 
   confirmFormItem = () => {
-    this.setState((prevState, props) => {
-      return {
-        arraySchema: {
-          ...prevState.arraySchema,
-          items: prevState.additionalItem
-        }
-      }
-    });
+    // this.setState((prevState, props) => {
+    //   let data = {
+    //     ...prevState.arraySchema
+    //   }
+    //   if (this.state.additionalItemsStatus) {
+    //     data.additionalItems = prevState.additionalItems;
+    //   } else {
+    //     data.items = prevState.additionalItems;
+    //   }
+    //   return {
+    //     arraySchema: data
+    //   }
+    // });
   }
 
   resetFormItem = () => {
+    this.setState({
+      additionalItems: {}
+    });
+  }
 
+  resetItemSetted = () => {
+    this.setState((prevState, props) => {
+      let tmpArraySchema = cloneDeep(prevState.arraySchema);
+      delete tmpArraySchema.additionalItems;
+      if (!prevState.fixedItemStatus) {
+        delete tmpArraySchema.items;
+      }
+      return {
+        arraySchema:tmpArraySchema
+      }
+    });
   }
 
   itemEnumStatusChange = (event) => {
@@ -238,17 +266,17 @@ class ArraySchemaCreator extends React.Component {
       });
       this.setState((prevState, props) => {
         return {
-          additionalItem: {
-            ...prevState.additionalItem,
+          additionalItems: {
+            ...prevState.additionalItems,
             enum: tmpRes
           }
         }
       });
     } else {
       this.setState((prevState, props) => {
-        delete prevState.additionalItem.enum;
+        delete prevState.additionalItems.enum;
         return {
-          additionalItem: prevState.additionalItem
+          additionalItems: prevState.additionalItems
         };
       });
     }
@@ -256,14 +284,16 @@ class ArraySchemaCreator extends React.Component {
 
   // * ------------
 
+  fixedItemStatusChange = (event) => {
+    let checked = event.target.checked;
+    console.log('checked', checked);
+    this.setState({
+      fixedItemStatus: checked,
+      additionalItemsStatus: checked
+    });
+  }
+
   deleteFixedItem = () => {
-    // let tmpFixedItemsList = cloneDeep(this.state.fixedItemsList);
-    // this.setState((prevState, props) => {
-    //   tmpFixedItemsList.splice(prevState.fixItemSelected.index, 1);
-    //   return {
-    //     fixedItemsList: tmpFixedItemsList
-    //   };
-    // });
     if (this.state.fixedItemsList[this.state.fixItemSelected]) {
       let tmpFixedItemsList = cloneDeep(this.state.fixedItemsList);
       tmpFixedItemsList.splice(this.state.fixItemSelected, 1);
@@ -317,7 +347,7 @@ class ArraySchemaCreator extends React.Component {
     return (
       <Form>
         <FormItem label="选择所属对象">
-          <Select defaultValue={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
+          <Select value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
                 return <Option key={ ele + index } value={ ele }>{ ele }</Option>
@@ -327,30 +357,33 @@ class ArraySchemaCreator extends React.Component {
         </FormItem>
 
         <FormItem label="key">
-          <Input onInput={ this.keyInput }></Input>
+          <Input value={ this.state.arraySchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
 
         <FormItem label="title">
-          <Input onInput={ this.titleInput }></Input>
+          <Input value={ this.state.arraySchema.title } onInput={ this.titleInput }></Input>
         </FormItem>
 
         <FormItem label="description">
-          <Input onInput={ this.descriptionInput }></Input>
+          <Input value={ this.state.arraySchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
 
         <FormItem label="default">
-          <TextArea onInput={ this.defaultInput }></TextArea>
+          <TextArea value={ this.state.arraySchema.default.join(',') } onInput={ this.defaultInput }></TextArea>
         </FormItem>
 
-        <FormItem label="item">
+        <FormItem label="items">
           <InputGroup>
             <div className="nested-form-item">
+              <p>(如果使用了fixedItems，确认建立arraySchema时，设置的items会自动变成addtionalItems)</p>
               <FormItem label="type">
                 <Select style={ {
                   width: '100%'
                 } } onChange={ (value) => {
                   this.itemAttrsChange({attr: 'type', value})
-                } }>
+                } } value={
+                  this.state.additionalItems.type
+                }>
                   {
                     this.typeList.map((ele, index, arr) => {
                       return <Option key={ ele + index } value={ ele }>{ ele }</Option>
@@ -360,42 +393,43 @@ class ArraySchemaCreator extends React.Component {
               </FormItem>
 
               <FormItem label="title">
-                <Input onInput={ (event) => {
+                <Input value={ this.state.additionalItems.title } onInput={ (event) => {
                   let tmpValue = event.target.value;
                   this.itemAttrsChange({attr: 'title', value: tmpValue})
                 } }></Input>
               </FormItem>
 
               <FormItem label="default">
-                <Input onInput={ (event) => {
+                <Input value={ this.state.additionalItems.default } onInput={ (event) => {
                   let tmpValue = event.target.value;
                   this.itemAttrsChange({attr: 'default', value: tmpValue})
                 } }></Input>
               </FormItem>
 
               <FormItem label="description">
-                <Input onInput={ (event) => {
+                <Input value={ this.state.additionalItems.description } onInput={ (event) => {
                   let tmpValue = event.target.value;
                   this.itemAttrsChange({attr: 'description', value: tmpValue})
                 } }></Input>
               </FormItem>
 
               <FormItem label="enum">
-                <Checkbox defaultValue={ this.state.itemEnumStatus } onChange={ this.itemEnumStatusChange }>使用enum</Checkbox>
-                <TextArea disabled={ !this.state.itemEnumStatus } onInput={ this.itemEnumInput }></TextArea>
+                <Checkbox checked={ this.state.itemEnumStatus } onChange={ this.itemEnumStatusChange }>使用enum</Checkbox>
+                <TextArea value={ this.state.additionalItems.enum && typeof this.state.additionalItems.enum === 'object' ? this.state.additionalItems.enum.join(',') : '' } disabled={ !this.state.itemEnumStatus } onInput={ this.itemEnumInput }></TextArea>
               </FormItem>
 
               <FormItem className="form-buttons">
-                <Button type="danger" onClick={ this.resetFormItem }>重置</Button>
-                <Button type="primary" onClick={ this.confirmFormItem }>确定</Button>
+                <Button type="danger" onClick={ this.resetItemSetted }>删除非固定items（additionalItems）</Button>
+                <Button type="danger" onClick={ this.resetFormItem }>重置表单</Button>
+                <Button type="primary" onClick={ this.confirmFormItem }>添加为items</Button>
               </FormItem>
             </div>
           </InputGroup>
         </FormItem>
 
-        <FormItem label="fixedItem">
+        <FormItem label="fixedItems">
           <InputGroup>
-            <Checkbox defaultValue={ this.state.fixedItemStatus } onChange={ this.fixedItemStatusChange }>添加固定的item</Checkbox>
+            <Checkbox checked={ this.state.fixedItemStatus } onChange={ this.fixedItemStatusChange }>添加固定的item</Checkbox>
 
             {
               this.state.fixedItemStatus &&

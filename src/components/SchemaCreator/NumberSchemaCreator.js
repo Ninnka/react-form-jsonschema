@@ -25,10 +25,16 @@ class NumberSchemaCreator extends React.Component {
       key: '',
       title: '',
       description: '',
-      default: '',
-      formDataValue: '',
+
       owner: '',
       ui: ''
+    },
+    numberSchemaAddition: {
+      default: '',
+      enum: '',
+      minimum: '',
+      maximum: '',
+      multipleOf: ''
     }
   }
 
@@ -51,6 +57,21 @@ class NumberSchemaCreator extends React.Component {
 
   // * ------------
 
+  checkNumberDotOnly = (value) => {
+    return value.indexOf('.') !== 0
+           && value.indexOf('.') === value.lastIndexOf('.')
+           && value.indexOf('.') === value.length - 1;
+  }
+
+  checkNumberCommaOnly = (value) => {
+    console.log('value', value);
+    return value.indexOf(',') !== 0
+           && value.indexOf(',') === value.lastIndexOf(',')
+           && value.indexOf(',') === value.length - 1;
+  }
+
+  // * ------------
+
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
     let propertiesEntryList = Object.entries(properties);
@@ -66,24 +87,40 @@ class NumberSchemaCreator extends React.Component {
 
   resetForm = () => {
     this.setState({
+      enumStatus: false,
       numberSchema: {
         key: '',
         title: '',
         description: '',
-        default: '',
-        formDataValue: '',
         owner: '',
         ui: ''
+      },
+      numberSchemaAddition: {
+        default: '',
+        enum: '',
+        minimum: '',
+        maximum: '',
+        multipleOf: ''
       }
     })
   }
 
   confirmForm = () => {
     console.log('confirmForm');
-    this.props.addNewProperties({
+    if (!this.state.numberSchema.key) {
+      return;
+    }
+    let data = {
       ...this.state.numberSchema,
       type: 'number'
-    });
+    };
+    for (let item of Object.entries(this.state.numberSchemaAddition)) {
+      if (item[1] !== '') {
+        data[item[0]] = item[1];
+      }
+    }
+    this.props.addNewProperties(data);
+    setTimeout(this.resetForm);
   }
 
   ownerChange = (value) => {
@@ -100,7 +137,6 @@ class NumberSchemaCreator extends React.Component {
   }
 
   keyInput = (event) => {
-    // this.numberSchema.key = event.target.value;
     let tmpValue = event.target.value;
     this.setState((prevState, props) => {
       return {
@@ -113,7 +149,6 @@ class NumberSchemaCreator extends React.Component {
   }
 
   titleInput = (event) => {
-    // this.numberSchema.title = event.target.value;
     let tmpValue = event.target.value;
     this.setState((prevState, props) => {
       return {
@@ -126,7 +161,6 @@ class NumberSchemaCreator extends React.Component {
   }
 
   descriptionInput = (event) => {
-    // this.numberSchema.description = event.target.value;
     let tmpValue = event.target.value;
     this.setState((prevState, props) => {
       return {
@@ -139,29 +173,31 @@ class NumberSchemaCreator extends React.Component {
   }
 
   defaultInput = (event) => {
-    // this.numberSchema.default = event.target.value;
     let tmpValue = event.target.value;
-    this.setState((prevState, props) => {
-      return {
-        numberSchema: {
-          ...prevState.numberSchema,
-          default: tmpValue
-        }
-      };
-    });
-  }
-
-  formDataValueInput = (event) => {
-    // this.numberSchema.formDataValue = event.target.value;
-    let tmpValue = event.target.value;
-    this.setState((prevState, props) => {
-      return {
-        numberSchema: {
-          ...prevState.numberSchema,
-          formDataValue: tmpValue
-        }
-      };
-    });
+    let lastDot = false;
+    if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
+      if (this.checkNumberDotOnly(tmpValue)) {
+        lastDot = true;
+      }
+      this.setState((prevState, props) => {
+        let data = {
+          ...prevState.numberSchemaAddition,
+        };
+        lastDot ? (data.default = Number(tmpValue) + '.') : (data.default = Number(tmpValue));
+        return {
+          numberSchemaAddition: data
+        };
+      });
+    } else if (tmpValue === '') {
+      this.setState((prevState, props) => {
+        return {
+          numberSchemaAddition: {
+            ...prevState.numberSchemaAddition,
+            default: ''
+          }
+        };
+      })
+    }
   }
 
   enumStatusChange = (event) => {
@@ -182,100 +218,143 @@ class NumberSchemaCreator extends React.Component {
     });
   }
 
-  enumValueInput = (event) => {
-    let tmpValue = event.target.value;
-    if (tmpValue !== '') {
-      let tmpRes = tmpValue.split(',').map((ele) => {
-        return Number(ele);
-      });
-      // this.numberSchema.enum = tmpRes;
-      this.setState((prevState, props) => {
-        return {
-          numberSchema: {
-            ...prevState.numberSchema,
-            enum: tmpRes
-          }
-        }
-      });
-    } else {
-      // delete this.numberSchema.enum;
-      this.setState((prevState, props) => {
-        delete prevState.numberSchema.enum;
-        return {
-          numberSchema: prevState.numberSchema
-        };
-      });
+  filterCreateNumberList (param) {
+    let value = param.value;
+    if (!value) {
+      return {
+        list: []
+      }
     }
+    let hasNaN = false;
+    let tmpValueList = value.split(',');
+    let list = tmpValueList.map((ele, index) => {
+      hasNaN = false;
+      isNaN(parseFloat(ele)) && (hasNaN = true);
+      let lastDot = false;
+      if (hasNaN) {
+        return '';
+      } else {
+        this.checkNumberDotOnly(ele) && (lastDot = true);
+        let res = lastDot ? parseFloat(ele) + '.' : parseFloat(ele);
+        return res;
+      }
+    });
+    return {
+      list
+    }
+  }
+
+  enumValueInput = (event) => {
+    event.persist()
+    let res = {};
+    let tmpRes = [];
+    let tmpValue = event.target.value;
+
+    if (tmpValue !== '') {
+      res = this.filterCreateNumberList({
+        value: tmpValue
+      });
+      tmpRes = res.list;
+    } else {
+      tmpRes = '';
+    }
+
+    this.setState((prevState, props) => {
+      return {
+        numberSchemaAddition: {
+          ...prevState.numberSchemaAddition,
+          enum: tmpRes
+        }
+      }
+    });
   }
 
   minimumInput = (event) => {
     let tmpValue = event.target.value;
+    let lastDot = false;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
-      // this.numberSchema.minimum = Number(tmpValue);
+      if (this.checkNumberDotOnly(tmpValue)) {
+        lastDot = true;
+      }
       this.setState((prevState, props) => {
+        let data = {
+          ...prevState.numberSchemaAddition,
+        };
+        lastDot ? (data.minimum = Number(tmpValue) + '.') : (data.minimum = Number(tmpValue));
         return {
-          numberSchema: {
-            ...prevState.numberSchema,
-            minimum: tmpValue
-          }
-        }
-      });
-    } else {
-      // delete this.numberSchema.minimum;
-      this.setState((prevState, props) => {
-        delete prevState.numberSchema.minimum;
-        return {
-          numberSchema: prevState.numberSchema
+          numberSchemaAddition: data
         };
       });
+    } else if (tmpValue === '') {
+      this.setState((prevState, props) => {
+        return {
+          numberSchemaAddition: {
+            ...prevState.numberSchemaAddition,
+            minimum: ''
+          }
+        };
+      })
     }
   }
 
   maximumInput = (event) => {
     let tmpValue = event.target.value;
+    let lastDot = false;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
+      if (this.checkNumberDotOnly(tmpValue)) {
+        lastDot = true;
+      }
       this.setState((prevState, props) => {
+        let data = {
+          ...prevState.numberSchemaAddition,
+        };
+        lastDot ? (data.maximum = Number(tmpValue) + '.') : (data.maximum = Number(tmpValue));
         return {
-          numberSchema: {
-            ...prevState.numberSchema,
-            maximum: tmpValue
-          }
-        }
-      });
-    } else {
-      this.setState((prevState, props) => {
-        delete prevState.numberSchema.maximum;
-        return {
-          numberSchema: prevState.numberSchema
+          numberSchemaAddition: data
         };
       });
+    } else if (tmpValue === '') {
+      this.setState((prevState, props) => {
+        return {
+          numberSchemaAddition: {
+            ...prevState.numberSchemaAddition,
+            maximum: ''
+          }
+        };
+      })
     }
   }
 
   multipleOfInput = (event) => {
     let tmpValue = event.target.value;
+    let lastDot = false;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
+      if (this.checkNumberDotOnly(tmpValue)) {
+        lastDot = true;
+      }
       this.setState((prevState, props) => {
+        let data = {
+          ...prevState.numberSchemaAddition,
+        };
+        lastDot ? (data.multipleOf = Number(tmpValue) + '.') : (data.multipleOf = Number(tmpValue));
         return {
-          numberSchema: {
-            ...prevState.numberSchema,
-            multipleOf: tmpValue
-          }
-        }
-      });
-    } else {
-      this.setState((prevState, props) => {
-        delete prevState.numberSchema.multipleOf;
-        return {
-          numberSchema: prevState.numberSchema
+          numberSchemaAddition: data
         };
       });
+    } else if (tmpValue === '') {
+      this.setState((prevState, props) => {
+        return {
+          numberSchemaAddition: {
+            ...prevState.numberSchemaAddition,
+            multipleOf: ''
+          }
+        };
+      })
     }
   }
 
   uiChange = (value) => {
     console.log('uiChange value:', value);
-    // this.numberSchema.ui = value;
     this.setState((prevState, props) => {
       return {
         numberSchema: {
@@ -292,7 +371,7 @@ class NumberSchemaCreator extends React.Component {
     return (
       <Form>
         <FormItem label="选择所属对象">
-          <Select defaultValue={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
+          <Select value={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
                 return <Option key={ ele + index } value={ ele }>{ ele }</Option>
@@ -301,37 +380,37 @@ class NumberSchemaCreator extends React.Component {
           </Select>
         </FormItem>
         <FormItem label="key">
-          <Input onInput={ this.keyInput }></Input>
+          <Input value={ this.state.numberSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
         <FormItem label="title">
-          <Input onInput={ this.titleInput }></Input>
+          <Input value={ this.state.numberSchema.title } onInput={ this.titleInput }></Input>
         </FormItem>
         <FormItem label="description">
-          <Input onInput={ this.descriptionInput }></Input>
+          <Input value={ this.state.numberSchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
         <FormItem label="default">
-          <Input onInput={ this.defaultInput }></Input>
+          <Input value={ this.state.numberSchemaAddition.default } onInput={ this.defaultInput }></Input>
         </FormItem>
-        <FormItem label="formDataValue">
+        {/* <FormItem label="formDataValue">
           <Input onInput={ this.formDataValueInput }></Input>
-        </FormItem>
+        </FormItem> */}
         <FormItem label="ui">
-          <Select defaultValue={ this.state.numberSchema.ui } onChange={ this.uiChange }>
+          <Select value={ this.state.numberSchema.ui } onChange={ this.uiChange }>
             <Option value="ui">UI</Option>
           </Select>
         </FormItem>
         <FormItem label="enum">
-          <Checkbox defaultValue={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
-          <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchema.enum } onInput={ this.enumValueInput }></TextArea>
+          <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
+          <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchemaAddition.enum ? this.state.numberSchemaAddition.enum.join(',') : '' } onInput={ this.enumValueInput }></TextArea>
         </FormItem>
         <FormItem label="最小值">
-          <Input onInput={ this.minimumInput }></Input>
+          <Input value={ this.state.numberSchemaAddition.minimum } onInput={ this.minimumInput }></Input>
         </FormItem>
         <FormItem label="最大值">
-          <Input onInput={ this.maximumInput }></Input>
+          <Input value={ this.state.numberSchemaAddition.maximum } onInput={ this.maximumInput }></Input>
         </FormItem>
         <FormItem label="值差">
-          <Input onInput={ this.multipleOfInput }></Input>
+          <Input value={ this.state.numberSchemaAddition.multipleOf } onInput={ this.multipleOfInput }></Input>
         </FormItem>
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>

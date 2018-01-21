@@ -17,14 +17,12 @@ const Option = Select.Option;
 class BooleanSchemaCreator extends React.Component {
 
   state = {
-    formatStatus: false,
     ownerList: [],
     booleanSchema: {
       key: '',
       title: '',
       description: '',
       default: '',
-      formDataValue: '',
       owner: '',
       ui: ''
     }
@@ -68,7 +66,6 @@ class BooleanSchemaCreator extends React.Component {
         title: '',
         description: '',
         default: '',
-        formDataValue: '',
         owner: '',
         ui: ''
       }
@@ -77,10 +74,14 @@ class BooleanSchemaCreator extends React.Component {
 
   confirmForm = () => {
     console.log('confirmForm');
+    if (!this.state.booleanSchema.key) {
+      return;
+    }
     this.props.addNewProperties({
       ...this.state.booleanSchema,
       type: 'boolean'
     });
+    setTimeout(this.resetForm);
   }
 
   ownerChange = (value) => {
@@ -131,25 +132,13 @@ class BooleanSchemaCreator extends React.Component {
     });
   }
 
-  defaultInput = (event) => {
-    let tmpValue = event.target.value;
+  defaultInput = (value) => {
+    // let tmpValue = event.target.value;
     this.setState((prevState, props) => {
       return {
         booleanSchema: {
           ...prevState.booleanSchema,
-          default: tmpValue
-        }
-      };
-    });
-  }
-
-  formDataValueInput = (event) => {
-    let tmpValue = event.target.value;
-    this.setState((prevState, props) => {
-      return {
-        booleanSchema: {
-          ...prevState.booleanSchema,
-          formDataValue: tmpValue
+          default: !(value === 'false')
         }
       };
     });
@@ -173,7 +162,7 @@ class BooleanSchemaCreator extends React.Component {
     return (
       <Form>
         <FormItem label="选择所属对象">
-          <Select defaultValue={ this.state.booleanSchema.owner } onChange={ this.ownerChange }>
+          <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
                 return <Option key={ ele + index } value={ ele }>{ ele }</Option>
@@ -183,30 +172,27 @@ class BooleanSchemaCreator extends React.Component {
         </FormItem>
 
         <FormItem label="key">
-          <Input onInput={ this.keyInput }></Input>
+          <Input value={ this.state.booleanSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
 
         <FormItem label="title">
-          <Input onInput={ this.titleInput }></Input>
+          <Input value={ this.state.booleanSchema.title } onInput={ this.titleInput }></Input>
         </FormItem>
 
         <FormItem label="description">
-          <Input onInput={ this.descriptionInput }></Input>
+          <Input value={ this.state.booleanSchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
 
         <FormItem label="default">
-          <Input onInput={ this.defaultInput }></Input>
-        </FormItem>
-
-        <FormItem label="formDataValue">
-          <Input onInput={ this.formDataValueInput }></Input>
+          <Select value={ this.state.booleanSchema.default.toString() } onChange={ this.defaultInput }>
+            <Option value="true">true</Option>
+            <Option value="false">false</Option>
+          </Select>
         </FormItem>
 
         <FormItem label="ui">
-          <Select defaultValue={ this.state.booleanSchema.ui } onChange={ this.uiChange }>
-            {/* { */}
+          <Select value={ this.state.booleanSchema.ui } onChange={ this.uiChange }>
             <Option value="ui">UI</Option>
-            {/* } */}
           </Select>
         </FormItem>
 
