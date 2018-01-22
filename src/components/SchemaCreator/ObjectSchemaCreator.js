@@ -8,7 +8,8 @@ import {
   Form,
   Input,
   Select,
-  Button
+  Button,
+  Checkbox
 } from 'antd';
 
 const FormItem = Form.Item;
@@ -18,6 +19,9 @@ class ObjectSchemaCreator extends React.Component {
 
   state = {
     ownerList: [],
+    ownerTypeStatus: 'object',
+    asFixedItems: false,
+    coverFixedItems: false,
     objectSchema: {
       key: '',
       title: '',
@@ -51,8 +55,16 @@ class ObjectSchemaCreator extends React.Component {
 
     for (let item of propertiesEntryList) {
       if (item[1].type === 'object') {
-        tmpOwnerList.push(path + '~/~' + item[0]);
+        tmpOwnerList.push({
+          path: path + '~/~' + item[0],
+          type: 'object'
+        });
         tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
+      } else if (item[1].type === 'array') {
+        tmpOwnerList.push({
+          path: path + '~/~' + item[0],
+          type: 'array'
+        });
       }
     }
     return tmpOwnerList;
@@ -60,6 +72,9 @@ class ObjectSchemaCreator extends React.Component {
 
   resetForm = () => {
     this.setState({
+      ownerTypeStatus: 'object',
+      asFixedItems: false,
+      coverFixedItems: false,
       objectSchema: {
         key: '',
         title: '',
@@ -74,13 +89,21 @@ class ObjectSchemaCreator extends React.Component {
     if (!this.state.objectSchema.key) {
       return;
     }
-    this.props.addNewProperties({
+    let data = {
       ...this.state.objectSchema,
       type: 'object',
       properties: {}
-    });
-    setTimeout(this.resetForm);
+    };
+    if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
+      data.asFixedItems = true;
+    } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
+      data.coverFixedItems = true;
+    }
+    this.props.addNewProperties(data);
+    setTimeout(this.resetForm, 0);
   }
+
+  // * ------------
 
   ownerChange = (value) => {
     console.log('ownerChange value:', value);
@@ -88,8 +111,9 @@ class ObjectSchemaCreator extends React.Component {
       return {
         objectSchema: {
           ...prevState.objectSchema,
-          owner: value
-        }
+          owner: prevState.ownerList[value].path
+        },
+        ownerTypeStatus: prevState.ownerList[value].type
       };
     });
   }
@@ -144,6 +168,24 @@ class ObjectSchemaCreator extends React.Component {
 
   // * ------------
 
+  asFixedItemsStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState({
+      asFixedItems: checked,
+      coverFixedItems: false
+    });
+  }
+
+  coverFixedItemsStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState({
+      coverFixedItems: checked,
+      asFixedItems: false
+    });
+  }
+
+  // * ------------
+
   render () {
     return (
       <Form>
@@ -151,10 +193,17 @@ class ObjectSchemaCreator extends React.Component {
           <Select value={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
-                return <Option key={ ele + index } value={ ele }>{ ele }</Option>
+                return <Option key={ ele.path + index } value={ index }>{ ele.path }</Option>
               })
             }
           </Select>
+          { this.state.ownerTypeStatus === 'array' &&
+            <div>
+              <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
+              <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
+              <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
+            </div>
+          }
         </FormItem>
         <FormItem label="key">
           <Input value={ this.state.objectSchema.key } onInput={ this.keyInput }></Input>

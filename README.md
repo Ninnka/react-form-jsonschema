@@ -61,6 +61,12 @@
 
 ## Update Log
 
+### 2018-01-22
+
+- 调整array类型的表单构造schema方式，隐藏创建items和fixedItems(现在用不到)
+- 调整可选择的父元素，父元素可选择为array
+- 父元素设置为array时，可以选择将元素添加为fixedItems或items（视情况而定可能为additionalItems）
+
 ### 2018-01-21
 
 - 完善构造array类型的表单，完善重置schema和单部分表单的功能
