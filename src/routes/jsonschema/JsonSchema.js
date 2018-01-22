@@ -13,14 +13,11 @@ import ArraySchemaCreator from '@components/SchemaCreator/ArraySchemaCreator';
 
 // * antd组件
 import {
-  Button,
   Tabs,
-  Select,
   message
 } from 'antd';
 
 const TabPane = Tabs.TabPane;
-const Option = Select.Option;
 
 class JsonSchema extends React.Component {
 
@@ -32,7 +29,7 @@ class JsonSchema extends React.Component {
       description: 'outer-object-desc',
       required: [],
       properties: {
-        ts: {
+        tsobject: {
           type: 'object',
           title: 'test title',
           properties: {
@@ -41,6 +38,10 @@ class JsonSchema extends React.Component {
               title: 'dewq'
             }
           }
+        },
+        tsarray: {
+          type: 'array',
+          title: 'frehgie'
         }
       }
     },
@@ -50,6 +51,12 @@ class JsonSchema extends React.Component {
 
   componentDidMount () {
 
+  }
+
+  componentDidCatch () {
+    this.messageError({
+      message: '出现未知错误'
+    });
   }
 
   // * ------------
@@ -66,12 +73,33 @@ class JsonSchema extends React.Component {
         tmpProperties = tmpProperties[item];
       }
     }
-    if (tmpProperties && tmpProperties.properties) {
+    if (tmpProperties && tmpProperties.type === 'object' && tmpProperties.properties) {
       tmpProperties.properties[newProperty.key] = newProperty;
+    } else if (tmpProperties && tmpProperties.type === 'array' && newProperty.asFixedItems) {
+      delete newProperty.asFixedItems;
+      if (Object.prototype.toString.call(tmpProperties.items).indexOf('Object') !== -1) {
+        tmpProperties.additionalItems = tmpProperties.items;
+        tmpProperties.items = [];
+        tmpProperties.items.push(newProperty);
+      } else if (Object.prototype.toString.call(tmpProperties.items).indexOf('Array') !== -1) {
+        tmpProperties.items.push(newProperty);
+      } else {
+        tmpProperties.items = [];
+        tmpProperties.items.push(newProperty);
+      }
+    } else if (tmpProperties && tmpProperties.type === 'array' && newProperty.coverFixedItems) {
+      delete newProperty.coverFixedItems;
+      delete tmpProperties.additionalItems;
+      tmpProperties.items = newProperty;
+    } else if (tmpProperties && tmpProperties.type === 'array') {
+      if (Object.prototype.toString.call(tmpProperties.items).indexOf('Array') !== -1) {
+        tmpProperties.additionalItems = newProperty;
+      } else {
+        tmpProperties.items = newProperty;
+      }
     } else {
       tmpProperties[newProperty.key] = newProperty;
     }
-    console.log('useProperties', useProperties);
     this.setState((prevState, props) => {
       return {
         JSONSchema: {
@@ -79,7 +107,30 @@ class JsonSchema extends React.Component {
           properties: useProperties
         }
       }
+    }, () => {
+      this.messageSuccess({
+        message: '添加成功'
+      });
     });
+  }
+
+  // * ------------
+
+  messageSuccess = (param = {
+    message: '成功'
+  }) => {
+    message.success(param.message, () => {
+
+    });
+  }
+  messageError = () => {
+
+  }
+  messageWarning = () => {
+
+  }
+  messageInfo = () => {
+
   }
 
   // * ------------

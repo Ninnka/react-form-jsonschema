@@ -11,8 +11,7 @@ import {
   Input,
   Select,
   Button,
-  Checkbox,
-  Col
+  Checkbox
 } from 'antd';
 
 const FormItem = Form.Item;
@@ -26,6 +25,9 @@ class ArraySchemaCreator extends React.Component {
     additionalItemsStatus: false,
     fixedItemStatus: false,
     itemEnumStatus: false,
+    ownerTypeStatus: 'object',
+    asFixedItems: false,
+    coverFixedItems: false,
     ownerList: [],
     arraySchema: {
       key: '',
@@ -77,8 +79,16 @@ class ArraySchemaCreator extends React.Component {
 
     for (let item of propertiesEntryList) {
       if (item[1].type === 'object') {
-        tmpOwnerList.push(path + '~/~' + item[0]);
+        tmpOwnerList.push({
+          path: path + '~/~' + item[0],
+          type: 'object'
+        });
         tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
+      } else if (item[1].type === 'array') {
+        tmpOwnerList.push({
+          path: path + '~/~' + item[0],
+          type: 'array'
+        });
       }
     }
     return tmpOwnerList;
@@ -89,6 +99,9 @@ class ArraySchemaCreator extends React.Component {
       additionalItemsStatus: false,
       fixedItemStatus: false,
       itemEnumStatus: false,
+      ownerTypeStatus: 'object',
+      asFixedItems: false,
+      coverFixedItems: false,
       arraySchema: {
         key: '',
         title: '',
@@ -116,13 +129,13 @@ class ArraySchemaCreator extends React.Component {
     }
     let data = {
       ...this.state.arraySchema,
-      type: 'array'
+      type: 'array',
+      items: {}
     };
-    if (this.state.fixedItemStatus) {
-      data.additionalItems = this.state.additionalItems;
-      data.items = this.state.fixedItemsList;
-    } else {
-      data.items = this.state.additionalItems;
+    if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
+      data.asFixedItems = true;
+    } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
+      data.coverFixedItems = true;
     }
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
@@ -134,8 +147,9 @@ class ArraySchemaCreator extends React.Component {
       return {
         arraySchema: {
           ...prevState.arraySchema,
-          owner: value
-        }
+          owner: prevState.ownerList[value].path
+        },
+        ownerTypeStatus: prevState.ownerList[value].type
       };
     });
   }
@@ -205,6 +219,24 @@ class ArraySchemaCreator extends React.Component {
 
   // * ------------
 
+  asFixedItemsStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState({
+      asFixedItems: checked,
+      coverFixedItems: false
+    });
+  }
+
+  coverFixedItemsStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState({
+      coverFixedItems: checked,
+      asFixedItems: false,
+    });
+  }
+
+  // * ------------
+
   itemAttrsChange = (param) => {
     this.setState((prevState, props) => {
       return {
@@ -217,19 +249,6 @@ class ArraySchemaCreator extends React.Component {
   }
 
   confirmFormItem = () => {
-    // this.setState((prevState, props) => {
-    //   let data = {
-    //     ...prevState.arraySchema
-    //   }
-    //   if (this.state.additionalItemsStatus) {
-    //     data.additionalItems = prevState.additionalItems;
-    //   } else {
-    //     data.items = prevState.additionalItems;
-    //   }
-    //   return {
-    //     arraySchema: data
-    //   }
-    // });
   }
 
   resetFormItem = () => {
@@ -350,10 +369,17 @@ class ArraySchemaCreator extends React.Component {
           <Select value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
-                return <Option key={ ele + index } value={ ele }>{ ele }</Option>
+                return <Option key={ ele.path + index } value={ index }>{ ele.path }</Option>
               })
             }
           </Select>
+          { this.state.ownerTypeStatus === 'array' &&
+            <div>
+              <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
+              <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
+              <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
+            </div>
+          }
         </FormItem>
 
         <FormItem label="key">
@@ -372,87 +398,20 @@ class ArraySchemaCreator extends React.Component {
           <TextArea value={ this.state.arraySchema.default.join(',') } onInput={ this.defaultInput }></TextArea>
         </FormItem>
 
-        <FormItem label="items">
-          <InputGroup>
-            <div className="nested-form-item">
-              <p>(如果使用了fixedItems，确认建立arraySchema时，设置的items会自动变成addtionalItems)</p>
-              <FormItem label="type">
-                <Select style={ {
-                  width: '100%'
-                } } onChange={ (value) => {
-                  this.itemAttrsChange({attr: 'type', value})
-                } } value={
-                  this.state.additionalItems.type
-                }>
-                  {
-                    this.typeList.map((ele, index, arr) => {
-                      return <Option key={ ele + index } value={ ele }>{ ele }</Option>
-                    })
-                  }
-                </Select>
-              </FormItem>
-
-              <FormItem label="title">
-                <Input value={ this.state.additionalItems.title } onInput={ (event) => {
-                  let tmpValue = event.target.value;
-                  this.itemAttrsChange({attr: 'title', value: tmpValue})
-                } }></Input>
-              </FormItem>
-
-              <FormItem label="default">
-                <Input value={ this.state.additionalItems.default } onInput={ (event) => {
-                  let tmpValue = event.target.value;
-                  this.itemAttrsChange({attr: 'default', value: tmpValue})
-                } }></Input>
-              </FormItem>
-
-              <FormItem label="description">
-                <Input value={ this.state.additionalItems.description } onInput={ (event) => {
-                  let tmpValue = event.target.value;
-                  this.itemAttrsChange({attr: 'description', value: tmpValue})
-                } }></Input>
-              </FormItem>
-
-              <FormItem label="enum">
-                <Checkbox checked={ this.state.itemEnumStatus } onChange={ this.itemEnumStatusChange }>使用enum</Checkbox>
-                <TextArea value={ this.state.additionalItems.enum && typeof this.state.additionalItems.enum === 'object' ? this.state.additionalItems.enum.join(',') : '' } disabled={ !this.state.itemEnumStatus } onInput={ this.itemEnumInput }></TextArea>
-              </FormItem>
-
-              <FormItem className="form-buttons">
-                <Button type="danger" onClick={ this.resetItemSetted }>删除非固定items（additionalItems）</Button>
-                <Button type="danger" onClick={ this.resetFormItem }>重置表单</Button>
-                <Button type="primary" onClick={ this.confirmFormItem }>添加为items</Button>
-              </FormItem>
-            </div>
-          </InputGroup>
-        </FormItem>
-
-        <FormItem label="fixedItems">
-          <InputGroup>
-            <Checkbox checked={ this.state.fixedItemStatus } onChange={ this.fixedItemStatusChange }>添加固定的item</Checkbox>
-
-            {
-              this.state.fixedItemStatus &&
+        {
+          false &&
+          <FormItem label="items">
+            <InputGroup>
               <div className="nested-form-item">
-                <FormItem label="选择需要删除的固定item">
-                  <Select style={ {
-                    width: '100%'
-                  } } onChange={ this.selectDeleteFixedItem } value={ this.state.fixedItemsList[this.state.fixItemSelected] ? this.state.fixedItemsList[this.state.fixItemSelected].title : '' }>
-                    {
-                      this.state.fixedItemsList.map((ele, index) => {
-                        return <Option key={ ele.type + ele.title + index } value={ index }>{ ele.title }</Option>
-                      })
-                    }
-                  </Select>
-                  <Button type="danger" onClick={ this.deleteFixedItem }>删除</Button>
-                </FormItem>
-
+                <p>(如果使用了fixedItems，确认建立arraySchema时，设置的items会自动变成addtionalItems)</p>
                 <FormItem label="type">
                   <Select style={ {
                     width: '100%'
                   } } onChange={ (value) => {
-                    this.fixedItemAttrsChange({attr: 'type', value})
-                  } } value={ this.state.newFixedItem.type }>
+                    this.itemAttrsChange({attr: 'type', value})
+                  } } value={
+                    this.state.additionalItems.type
+                  }>
                     {
                       this.typeList.map((ele, index, arr) => {
                         return <Option key={ ele + index } value={ ele }>{ ele }</Option>
@@ -462,40 +421,109 @@ class ArraySchemaCreator extends React.Component {
                 </FormItem>
 
                 <FormItem label="title">
-                  <Input value={ this.state.newFixedItem.title } onInput={ (event) => {
+                  <Input value={ this.state.additionalItems.title } onInput={ (event) => {
                     let tmpValue = event.target.value;
-                    this.fixedItemAttrsChange({attr: 'title', value: tmpValue})
+                    this.itemAttrsChange({attr: 'title', value: tmpValue})
                   } }></Input>
                 </FormItem>
 
                 <FormItem label="default">
-                  <Input value={ this.state.newFixedItem.default } onInput={ (event) => {
+                  <Input value={ this.state.additionalItems.default } onInput={ (event) => {
                     let tmpValue = event.target.value;
-                    this.fixedItemAttrsChange({attr: 'default', value: tmpValue})
+                    this.itemAttrsChange({attr: 'default', value: tmpValue})
                   } }></Input>
                 </FormItem>
 
                 <FormItem label="description">
-                  <Input value={ this.state.newFixedItem.description } onInput={ (event) => {
+                  <Input value={ this.state.additionalItems.description } onInput={ (event) => {
                     let tmpValue = event.target.value;
-                    this.fixedItemAttrsChange({attr: 'description', value: tmpValue})
+                    this.itemAttrsChange({attr: 'description', value: tmpValue})
                   } }></Input>
                 </FormItem>
 
+                <FormItem label="enum">
+                  <Checkbox checked={ this.state.itemEnumStatus } onChange={ this.itemEnumStatusChange }>使用enum</Checkbox>
+                  <TextArea value={ this.state.additionalItems.enum && typeof this.state.additionalItems.enum === 'object' ? this.state.additionalItems.enum.join(',') : '' } disabled={ !this.state.itemEnumStatus } onInput={ this.itemEnumInput }></TextArea>
+                </FormItem>
+
                 <FormItem className="form-buttons">
-                  <Button type="danger" onClick={ this.resetFormFixedItem }>重置</Button>
-                  <Button type="primary" onClick={ this.confirmFormFixedItem }>添加</Button>
+                  <Button type="danger" onClick={ this.resetItemSetted }>删除非固定items（additionalItems）</Button>
+                  <Button type="danger" onClick={ this.resetFormItem }>重置表单</Button>
+                  <Button type="primary" onClick={ this.confirmFormItem }>添加为items</Button>
                 </FormItem>
               </div>
-            }
+            </InputGroup>
+          </FormItem>
+        }
+
+        {
+          false &&
+          <FormItem label="fixedItems">
+            <InputGroup>
+              <Checkbox checked={ this.state.fixedItemStatus } onChange={ this.fixedItemStatusChange }>添加固定的item</Checkbox>
+
+              {
+                this.state.fixedItemStatus &&
+                <div className="nested-form-item">
+                  <FormItem label="选择需要删除的固定item">
+                    <Select style={ {
+                      width: '100%'
+                    } } onChange={ this.selectDeleteFixedItem } value={ this.state.fixedItemsList[this.state.fixItemSelected] ? this.state.fixedItemsList[this.state.fixItemSelected].title : '' }>
+                      {
+                        this.state.fixedItemsList.map((ele, index) => {
+                          return <Option key={ ele.type + ele.title + index } value={ index }>{ ele.title }</Option>
+                        })
+                      }
+                    </Select>
+                    <Button type="danger" onClick={ this.deleteFixedItem }>删除</Button>
+                  </FormItem>
+
+                  <FormItem label="type">
+                    <Select style={ {
+                      width: '100%'
+                    } } onChange={ (value) => {
+                      this.fixedItemAttrsChange({attr: 'type', value})
+                    } } value={ this.state.newFixedItem.type }>
+                      {
+                        this.typeList.map((ele, index, arr) => {
+                          return <Option key={ ele + index } value={ ele }>{ ele }</Option>
+                        })
+                      }
+                    </Select>
+                  </FormItem>
+
+                  <FormItem label="title">
+                    <Input value={ this.state.newFixedItem.title } onInput={ (event) => {
+                      let tmpValue = event.target.value;
+                      this.fixedItemAttrsChange({attr: 'title', value: tmpValue})
+                    } }></Input>
+                  </FormItem>
+
+                  <FormItem label="default">
+                    <Input value={ this.state.newFixedItem.default } onInput={ (event) => {
+                      let tmpValue = event.target.value;
+                      this.fixedItemAttrsChange({attr: 'default', value: tmpValue})
+                    } }></Input>
+                  </FormItem>
+
+                  <FormItem label="description">
+                    <Input value={ this.state.newFixedItem.description } onInput={ (event) => {
+                      let tmpValue = event.target.value;
+                      this.fixedItemAttrsChange({attr: 'description', value: tmpValue})
+                    } }></Input>
+                  </FormItem>
+
+                  <FormItem className="form-buttons">
+                    <Button type="danger" onClick={ this.resetFormFixedItem }>重置</Button>
+                    <Button type="primary" onClick={ this.confirmFormFixedItem }>添加</Button>
+                  </FormItem>
+                </div>
+              }
 
 
-          </InputGroup>
-        </FormItem>
-
-        <FormItem label="">
-
-        </FormItem>
+            </InputGroup>
+          </FormItem>
+        }
 
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
