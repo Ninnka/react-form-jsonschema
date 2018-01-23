@@ -27,24 +27,21 @@
     - 选择ui
       - ui:widget
         - text(default)
-          - ui:autofocus
-          - ui:placeholder
         - textarea
-          - ui:autofocus
-          - ui:placeholder
           - ui:options
             - row
         - password
         - color
         - file(与设置format file效果相同)
-      - ui:title
-      - ui:description
+      - ui:placeholder
+      - ui:autofocus
       - ui:emptyValue
-      - ui:description
       - ui:help
       - ui:enumDisabled
       - ui:disabled
       - ui:readonly
+      - ui:title
+      - ui:description
   - object类型
     - 选择所属的对象
     - 添加properties
@@ -69,19 +66,18 @@
     - 选择ui
       - ui:widget
         - text(default)
-          - ui:autofocus
-          - ui:placeholder
         - updown
         - range
         - radio
-      - ui:title
-      - ui:description
+      - ui:autofocus
+      - ui:placeholder
       - ui:emptyValue
-      - ui:description
       - ui:help
       - ui:enumDisabled
       - ui:disabled
       - ui:readonly
+      - ui:title
+      - ui:description
   - boolean类型
     - 选择所属的对象
     - 设置title

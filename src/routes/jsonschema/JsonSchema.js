@@ -96,25 +96,57 @@ class JsonSchema extends React.Component {
     return Object.prototype.toString.call(property);
   }
 
+  // * 添加新的属性
   addNewProperties = (newProperty) => {
     console.log('addNewProperties newProperty:', newProperty);
     let owner = newProperty.owner;
     let ownerList = owner.split('~/~');
-    console.log('ownerList', ownerList);
+
     let useProperties = cloneDeep(this.state.JSONSchema.properties);
-    let tmpProperties = useProperties;
+    let tmpProperties = useProperties; // * 用来定位JsonSchema具体的位置
+    let useUISchema = cloneDeep(this.state.UISchema);
+    let tmpUISchema = useUISchema; // * 用来定位UISchema具体的位置
+
     for (let item of ownerList) {
-      if (item !== 'global' && tmpProperties[item]) {
+      if (
+        item !== 'global'
+        && tmpProperties[item]
+      ) {
         tmpProperties = tmpProperties[item];
-      } else if (item !== 'global' && tmpProperties.type === 'object' && tmpProperties.properties[item]) {
+
+        !tmpUISchema[item] && (tmpUISchema[item] = {});
+        tmpUISchema = tmpUISchema[item];
+      } else if (
+        item !== 'global'
+        && tmpProperties.type === 'object'
+        && tmpProperties.properties[item]
+      ) {
         tmpProperties = tmpProperties.properties[item];
-      } else if (item !== 'global' && tmpProperties.type === 'array' && tmpProperties[item]) {
+
+        !tmpUISchema[item] && (tmpUISchema[item] = {});
+        tmpUISchema = tmpUISchema[item];
+      } else if (
+        item !== 'global'
+        && tmpProperties.type === 'array'
+        && tmpProperties[item]
+      ) {
         tmpProperties = tmpProperties[item];
+
+
       }
     }
-    if (tmpProperties && tmpProperties.type === 'object' && tmpProperties.properties) {
+
+    if (
+      tmpProperties
+      && tmpProperties.type === 'object'
+      && tmpProperties.properties
+    ) {
       tmpProperties.properties[newProperty.key] = newProperty;
-    } else if (tmpProperties && tmpProperties.type === 'array' && newProperty.asFixedItems) {
+    } else if (
+      tmpProperties
+      && tmpProperties.type === 'array'
+      && newProperty.asFixedItems
+    ) {
       delete newProperty.asFixedItems;
       if (Object.prototype.toString.call(tmpProperties.items).indexOf('Object') !== -1) {
         tmpProperties.additionalItems = tmpProperties.items;
@@ -126,11 +158,18 @@ class JsonSchema extends React.Component {
         tmpProperties.items = [];
         tmpProperties.items.push(newProperty);
       }
-    } else if (tmpProperties && tmpProperties.type === 'array' && newProperty.coverFixedItems) {
+    } else if (
+      tmpProperties
+      && tmpProperties.type === 'array'
+      && newProperty.coverFixedItems
+    ) {
       delete newProperty.coverFixedItems;
       delete tmpProperties.additionalItems;
       tmpProperties.items = newProperty;
-    } else if (tmpProperties && tmpProperties.type === 'array') {
+    } else if (
+      tmpProperties
+      && tmpProperties.type === 'array'
+    ) {
       if (Object.prototype.toString.call(tmpProperties.items).indexOf('Array') !== -1) {
         tmpProperties.additionalItems = newProperty;
       } else {
@@ -139,6 +178,7 @@ class JsonSchema extends React.Component {
     } else {
       tmpProperties[newProperty.key] = newProperty;
     }
+
     this.setState((prevState, props) => {
       return {
         JSONSchema: {
@@ -151,6 +191,11 @@ class JsonSchema extends React.Component {
         message: '添加成功'
       });
     });
+  }
+
+  // * 添加新的ui
+  addNewUI = (data) => {
+    console.log('addNewUI data: ', data);
   }
 
   // * ------------
@@ -184,6 +229,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
+              } addNewUI={
+                this.addNewUI
               }></ObjectSchemaCreator>
             </div>
           </TabPane>
@@ -193,6 +240,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
+              } addNewUI={
+                this.addNewUI
               }></StringSchemaCreator>
             </div>
           </TabPane>
@@ -202,6 +251,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
+              } addNewUI={
+                this.addNewUI
               }></NumberSchemaCreator>
             </div>
           </TabPane>
@@ -211,6 +262,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
+              } addNewUI={
+                this.addNewUI
               }></BooleanSchemaCreator>
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
@@ -219,6 +272,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
+              } addNewUI={
+                this.addNewUI
               }></ArraySchemaCreator>
             </div>
           </TabPane>
