@@ -3,6 +3,8 @@ import React from 'react';
 // * 样式
 
 
+import StringUICreator from '@components/SchemaCreator/StringUICreator';
+
 // * antd组件
 import {
   Form,
@@ -28,13 +30,14 @@ class StringSchemaCreator extends React.Component {
       title: '',
       description: '',
       default: '',
-      owner: '',
-      ui: ''
+      owner: ''
     },
     stringSchemaAddition: {
       format: ''
     }
   }
+
+  uiCreator = null;
 
   static formatList = [
     'email',
@@ -58,6 +61,7 @@ class StringSchemaCreator extends React.Component {
     this.setState({
       ownerList: tmpOwnerList
     });
+    console.log('uiCreator', this.uiCreator);
   }
 
   // * ------------
@@ -132,12 +136,14 @@ class StringSchemaCreator extends React.Component {
         title: '',
         description: '',
         default: '',
-        owner: '',
-        ui: ''
+        owner: ''
       },
       stringSchemaAddition: {
         format: ''
       }
+    });
+    this.uiCreator.setState({
+      ui: {}
     });
   }
 
@@ -158,7 +164,21 @@ class StringSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
+    if (Object.keys(this.uiCreator.state.ui).length > 0) {
+      data.ui = this.uiCreator.state.ui;
+    }
     this.props.addNewProperties(data);
+    // * 如果有设置ui，则将ui添加到UISchema
+    // if (Object.keys(this.uiCreator.state.ui).length > 0) {
+    //   let ui = {
+    //     [data.key]: this.uiCreator.state.ui
+    //   };
+    //   this.props.addNewUI({
+    //     owner: data.owner,
+    //     ui
+    //   });
+    // }
+    // * --------------
     setTimeout(this.resetForm, 0);
   }
 
@@ -273,15 +293,15 @@ class StringSchemaCreator extends React.Component {
   }
 
   uiChange = (value) => {
-    console.log('uiChange value:', value);
-    this.setState((prevState, props) => {
-      return {
-        stringSchema: {
-          ...prevState.stringSchema,
-          ui: value
-        }
-      };
-    });
+    // console.log('uiChange value:', value);
+    // this.setState((prevState, props) => {
+    //   return {
+    //     stringSchema: {
+    //       ...prevState.stringSchema,
+    //       ui: value
+    //     }
+    //   };
+    // });
   }
 
   // * ------------
@@ -338,26 +358,27 @@ class StringSchemaCreator extends React.Component {
             </div>
           }
         </FormItem>
+
         <FormItem label="key">
           <Input value={ this.state.stringSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
+
         <FormItem label="title">
           <Input value={ this.state.stringSchema.title } onInput={ this.titleInput }></Input>
         </FormItem>
+
         <FormItem label="description">
           <Input value={ this.state.stringSchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
+
         <FormItem label="default">
           <Input value={ this.state.stringSchema.default } onInput={ this.defaultInput }></Input>
         </FormItem>
-        <FormItem label="ui">
-          <Select value={ this.state.stringSchema.ui } onChange={ this.uiChange }>
-            <Option value="ui">UI</Option>
-          </Select>
-        </FormItem>
+
         <FormItem label="最小长度">
           <Input value={ this.state.stringSchema.minLength } onInput={ this.minLengthInput }></Input>
         </FormItem>
+
         <FormItem label="format">
           <Checkbox checked={ this.state.formatStatus } onChange={ this.formatStatusChange }>使用format</Checkbox>
           <Select disabled={ !this.state.formatStatus } value={ this.state.stringSchemaAddition.format } onChange={ this.formatTypeChange } allowClear>
@@ -368,6 +389,20 @@ class StringSchemaCreator extends React.Component {
             }
           </Select>
         </FormItem>
+
+        <FormItem label="设置ui">
+          {/* <Select value={ this.state.stringSchema.ui } onChange={ this.uiChange }>
+            <Option value="ui">UI</Option>
+          </Select> */}
+          <div className="nested-form-item">
+            <StringUICreator ref={
+              (uiCreator) => {
+                this.uiCreator = uiCreator;
+              }
+            } uiChange={ this.uiChange }></StringUICreator>
+          </div>
+        </FormItem>
+
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
           <Button type="primary" onClick={ this.confirmForm }>确认</Button>
