@@ -33,20 +33,51 @@ class JsonSchema extends React.Component {
           type: 'object',
           title: 'test title',
           properties: {
+            gfru: {
+              type: 'object',
+              title: 'vgrhtyh',
+              properties: {}
+            },
             fw: {
-              type: 'string',
-              title: 'dewq'
+              type: 'array',
+              title: 'dewq',
+              items: {
+                type: 'array',
+                title: 'fw items',
+                // properties: {},
+                items: [{
+                  type: 'string',
+                  title: 'grew'
+                }, {
+                  type: 'object',
+                  title: 'heiouwq',
+                  properties: {}
+                }],
+                additionalItems: {
+                  type: 'object',
+                  title: 'bytrhjh',
+                  properties: {}
+                }
+              }
             }
           }
         },
         tsarray: {
           type: 'array',
-          title: 'frehgie'
+          title: 'tsarray tittle',
+          items: [{
+            type: 'string',
+            title: 'grew'
+          }, {
+            type: 'object',
+            title: 'heiouwq',
+            properties: {}
+          }]
         }
       }
     },
-    UISchema: {
-    }
+    UISchema: {},
+    FormData: {}
   }
 
   componentDidMount () {
@@ -61,6 +92,10 @@ class JsonSchema extends React.Component {
 
   // * ------------
 
+  getPropertyJsType = (property) => {
+    return Object.prototype.toString.call(property);
+  }
+
   addNewProperties = (newProperty) => {
     console.log('addNewProperties newProperty:', newProperty);
     let owner = newProperty.owner;
@@ -69,7 +104,11 @@ class JsonSchema extends React.Component {
     let useProperties = cloneDeep(this.state.JSONSchema.properties);
     let tmpProperties = useProperties;
     for (let item of ownerList) {
-      if (item !== 'global') {
+      if (item !== 'global' && tmpProperties[item]) {
+        tmpProperties = tmpProperties[item];
+      } else if (item !== 'global' && tmpProperties.type === 'object' && tmpProperties.properties[item]) {
+        tmpProperties = tmpProperties.properties[item];
+      } else if (item !== 'global' && tmpProperties.type === 'array' && tmpProperties[item]) {
         tmpProperties = tmpProperties[item];
       }
     }

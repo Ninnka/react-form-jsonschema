@@ -13,7 +13,8 @@
     "lodash": "^4.17.4",
     "react": "^16.2.0",
     "react-css-modules": "^4.7.1",
-    "react-dom": "^16.2.0"
+    "react-dom": "^16.2.0",
+    "react-jsonschema-form": "^1.0.0"
   },
   "devDependencies": {
     "babel-plugin-dva-hmr": "^0.3.2",
