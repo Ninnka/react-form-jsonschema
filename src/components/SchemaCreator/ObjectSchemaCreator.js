@@ -33,7 +33,7 @@ class ObjectSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('nextProps', nextProps);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', nextProps.properties));
+    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -41,7 +41,7 @@ class ObjectSchemaCreator extends React.Component {
 
   componentDidMount () {
     console.log('properties: ', this.props.properties);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', this.props.properties));
+    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -52,20 +52,58 @@ class ObjectSchemaCreator extends React.Component {
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
     let propertiesEntryList = Object.entries(properties);
-
+    // console.log('path properties', path, propertiesEntryList);
     for (let item of propertiesEntryList) {
       if (item[1].type === 'object') {
-        tmpOwnerList.push({
-          path: path + '~/~' + item[0],
-          type: 'object'
-        });
-        tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
+        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
       } else if (item[1].type === 'array') {
-        tmpOwnerList.push({
-          path: path + '~/~' + item[0],
-          type: 'array'
-        });
+        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
       }
+    }
+    // console.log('path tmpOwnerList', path, tmpOwnerList);
+    return tmpOwnerList;
+  }
+
+  compuOwnerListObject = (path, item, exclude = false) => {
+    let tmpOwnerList = [];
+    !exclude && tmpOwnerList.push({
+      path: path + '~/~' + item[0],
+      type: 'object'
+    });
+    tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
+    return tmpOwnerList;
+  }
+
+  compuOwnerListArray = (path, item, exclude = false) => {
+    let tmpOwnerList = [];
+    let tmpPath = path + '~/~' + item[0];
+    !exclude && tmpOwnerList.push({
+      path: tmpPath,
+      type: 'array'
+    });
+    if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
+      let len = item[1].items.length;
+      for (let i = 0; i < len; i++) {
+        let tarr = this.compuOwnerListHelper(tmpPath, ['items~/~' + i, item[1].items[i]]);
+        tmpOwnerList = tmpOwnerList.concat(tarr);
+      }
+      if (item[1].additionalItems && item[1].additionalItems.type !== undefined) {
+        let tarr = this.compuOwnerListHelper(tmpPath, ['additionalItems', item[1].additionalItems]);
+        tmpOwnerList = tmpOwnerList.concat(tarr);
+      }
+    } else if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Object') !== -1) {
+      let tarr = this.compuOwnerListHelper(tmpPath, ['items', item[1].items]);
+      tmpOwnerList = tmpOwnerList.concat(tarr);
+    }
+    return tmpOwnerList;
+  }
+
+  compuOwnerListHelper = (path, item) => {
+    let tmpOwnerList = [];
+    if (item[1].type === 'object') {
+      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
+    } else if (item[1].type === 'array') {
+      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
     }
     return tmpOwnerList;
   }
@@ -193,7 +231,22 @@ class ObjectSchemaCreator extends React.Component {
           <Select value={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
-                return <Option key={ ele.path + index } value={ index }>{ ele.path }</Option>
+                return (
+                  <Option key={ ele.path + index } value={ index }>
+                    <div style={ {
+                      position: 'relative'
+                    } }>
+                      <span style={ {
+                        position: 'absolute',
+                        top: '0',
+                        left: '0'
+                      } }>{ ele.type + ' : ' }</span>
+                      <span style={ {
+                        marginLeft: '70px'
+                      } }>{ ele.path }</span>
+                    </div>
+                  </Option>
+                )
               })
             }
           </Select>

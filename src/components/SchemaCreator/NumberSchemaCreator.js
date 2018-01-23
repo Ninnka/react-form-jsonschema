@@ -24,6 +24,7 @@ class NumberSchemaCreator extends React.Component {
     ownerTypeStatus: 'object',
     asFixedItems: false,
     coverFixedItems: false,
+    asInteger: false,
     numberSchema: {
       key: '',
       title: '',
@@ -43,7 +44,7 @@ class NumberSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('nextProps', nextProps);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', nextProps.properties));
+    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -51,7 +52,7 @@ class NumberSchemaCreator extends React.Component {
 
   componentDidMount () {
     console.log('properties: ', this.props.properties);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', this.props.properties));
+    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -77,20 +78,58 @@ class NumberSchemaCreator extends React.Component {
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
     let propertiesEntryList = Object.entries(properties);
-
+    // console.log('path properties', path, propertiesEntryList);
     for (let item of propertiesEntryList) {
       if (item[1].type === 'object') {
-        tmpOwnerList.push({
-          path: path + '~/~' + item[0],
-          type: 'object'
-        });
-        tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
+        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
       } else if (item[1].type === 'array') {
-        tmpOwnerList.push({
-          path: path + '~/~' + item[0],
-          type: 'array'
-        });
+        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
       }
+    }
+    // console.log('path tmpOwnerList', path, tmpOwnerList);
+    return tmpOwnerList;
+  }
+
+  compuOwnerListObject = (path, item, exclude = false) => {
+    let tmpOwnerList = [];
+    !exclude && tmpOwnerList.push({
+      path: path + '~/~' + item[0],
+      type: 'object'
+    });
+    tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
+    return tmpOwnerList;
+  }
+
+  compuOwnerListArray = (path, item, exclude = false) => {
+    let tmpOwnerList = [];
+    let tmpPath = path + '~/~' + item[0];
+    !exclude && tmpOwnerList.push({
+      path: tmpPath,
+      type: 'array'
+    });
+    if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
+      let len = item[1].items.length;
+      for (let i = 0; i < len; i++) {
+        let tarr = this.compuOwnerListHelper(tmpPath, ['items~/~' + i, item[1].items[i]]);
+        tmpOwnerList = tmpOwnerList.concat(tarr);
+      }
+      if (item[1].additionalItems && item[1].additionalItems.type !== undefined) {
+        let tarr = this.compuOwnerListHelper(tmpPath, ['additionalItems', item[1].additionalItems]);
+        tmpOwnerList = tmpOwnerList.concat(tarr);
+      }
+    } else if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Object') !== -1) {
+      let tarr = this.compuOwnerListHelper(tmpPath, ['items', item[1].items]);
+      tmpOwnerList = tmpOwnerList.concat(tarr);
+    }
+    return tmpOwnerList;
+  }
+
+  compuOwnerListHelper = (path, item) => {
+    let tmpOwnerList = [];
+    if (item[1].type === 'object') {
+      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
+    } else if (item[1].type === 'array') {
+      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
     }
     return tmpOwnerList;
   }
@@ -101,6 +140,7 @@ class NumberSchemaCreator extends React.Component {
       ownerTypeStatus: 'object',
       asFixedItems: false,
       coverFixedItems: false,
+      asInteger: false,
       numberSchema: {
         key: '',
         title: '',
@@ -125,7 +165,7 @@ class NumberSchemaCreator extends React.Component {
     }
     let data = {
       ...this.state.numberSchema,
-      type: 'number'
+      type: this.state.asInteger ? 'integer' : 'number'
     };
     for (let item of Object.entries(this.state.numberSchemaAddition)) {
       if (item[1] !== '') {
@@ -195,7 +235,7 @@ class NumberSchemaCreator extends React.Component {
     let tmpValue = event.target.value;
     let lastDot = false;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
-      if (this.checkNumberDotOnly(tmpValue)) {
+      if (!this.state.asInteger && this.checkNumberDotOnly(tmpValue)) {
         lastDot = true;
       }
       this.setState((prevState, props) => {
@@ -253,7 +293,7 @@ class NumberSchemaCreator extends React.Component {
       if (hasNaN) {
         return '';
       } else {
-        this.checkNumberDotOnly(ele) && (lastDot = true);
+        this.checkNumberDotOnly(ele) && !this.state.asInteger && (lastDot = true);
         let res = lastDot ? parseFloat(ele) + '.' : parseFloat(ele);
         return res;
       }
@@ -292,7 +332,7 @@ class NumberSchemaCreator extends React.Component {
     let tmpValue = event.target.value;
     let lastDot = false;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
-      if (this.checkNumberDotOnly(tmpValue)) {
+      if (!this.state.asInteger && this.checkNumberDotOnly(tmpValue)) {
         lastDot = true;
       }
       this.setState((prevState, props) => {
@@ -320,7 +360,7 @@ class NumberSchemaCreator extends React.Component {
     let tmpValue = event.target.value;
     let lastDot = false;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
-      if (this.checkNumberDotOnly(tmpValue)) {
+      if (!this.state.asInteger && this.checkNumberDotOnly(tmpValue)) {
         lastDot = true;
       }
       this.setState((prevState, props) => {
@@ -348,7 +388,7 @@ class NumberSchemaCreator extends React.Component {
     let tmpValue = event.target.value;
     let lastDot = false;
     if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
-      if (this.checkNumberDotOnly(tmpValue)) {
+      if (!this.state.asInteger && this.checkNumberDotOnly(tmpValue)) {
         lastDot = true;
       }
       this.setState((prevState, props) => {
@@ -402,6 +442,22 @@ class NumberSchemaCreator extends React.Component {
     });
   }
 
+  asIntegerStatusChange = (event) => {
+    let checked = event.target.checked;
+    let data = {
+      asInteger: checked
+    };
+    if (checked) {
+      data.numberSchemaAddition = {};
+      for (let item of Object.entries(this.state.numberSchemaAddition)) {
+         data.numberSchemaAddition[item[0]] = item[1] !== '' ? parseInt(item[1], 10) : '';
+      }
+    }
+    this.setState({
+      ...data
+    });
+  }
+
   // * ------------
 
   render () {
@@ -411,7 +467,22 @@ class NumberSchemaCreator extends React.Component {
           <Select value={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
-                return <Option key={ ele.path + index } value={ index }>{ ele.path }</Option>
+                return (
+                  <Option key={ ele.path + index } value={ index }>
+                    <div style={ {
+                      position: 'relative'
+                    } }>
+                      <span style={ {
+                        position: 'absolute',
+                        top: '0',
+                        left: '0'
+                      } }>{ ele.type + ' : ' }</span>
+                      <span style={ {
+                        marginLeft: '70px'
+                      } }>{ ele.path }</span>
+                    </div>
+                  </Option>
+                )
               })
             }
           </Select>
@@ -422,6 +493,9 @@ class NumberSchemaCreator extends React.Component {
               <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
             </div>
           }
+        </FormItem>
+        <FormItem label="限制为integer">
+          <Checkbox checked={ this.state.asInteger } onChange={ this.asIntegerStatusChange }>选中后，会将数值强制转换为整型</Checkbox>
         </FormItem>
         <FormItem label="key">
           <Input value={ this.state.numberSchema.key } onInput={ this.keyInput }></Input>
