@@ -104,6 +104,7 @@ class JsonSchema extends React.Component {
 
     let useProperties = cloneDeep(this.state.JSONSchema.properties);
     let tmpProperties = useProperties; // * 用来定位JsonSchema具体的位置
+
     let useUISchema = cloneDeep(this.state.UISchema);
     let tmpUISchema = useUISchema; // * 用来定位UISchema具体的位置
 
@@ -114,8 +115,10 @@ class JsonSchema extends React.Component {
       ) {
         tmpProperties = tmpProperties[item];
 
-        !tmpUISchema[item] && (tmpUISchema[item] = {});
-        tmpUISchema = tmpUISchema[item];
+        if (!useUISchema[item]) {
+          useUISchema[item] = {};
+        }
+        useUISchema = useUISchema[item];
       } else if (
         item !== 'global'
         && tmpProperties.type === 'object'
@@ -123,18 +126,37 @@ class JsonSchema extends React.Component {
       ) {
         tmpProperties = tmpProperties.properties[item];
 
-        !tmpUISchema[item] && (tmpUISchema[item] = {});
-        tmpUISchema = tmpUISchema[item];
+        !useUISchema[item] && (useUISchema[item] = {});
+        useUISchema = useUISchema[item];
       } else if (
         item !== 'global'
         && tmpProperties.type === 'array'
         && tmpProperties[item]
       ) {
+        // * 目标为数组是，根据item获取到下一个目标
         tmpProperties = tmpProperties[item];
 
-
+        if (item !== 'items') {
+          continue;
+        }
+        // * 因为是数组，所以需要再次判断获取到的下一个目标的本身的js类型是object还是array
+        if (this.getPropertyJsType(tmpProperties).indexOf('Object') !== -1) {
+          !useUISchema[item] && (useUISchema[item] = {});
+        } else if (this.getPropertyJsType(tmpProperties).indexOf('Array') !== -1) {
+          !useUISchema[item] && (useUISchema[item] = []);
+        }
+        useUISchema = useUISchema[item];
       }
     }
+
+    for (let item of Object.entries(newProperty.ui)) {
+      useUISchema[item[0]] = item[1];
+    }
+
+    console.log('useUISchema', useUISchema);
+    console.log('tmpUISchema', tmpUISchema);
+
+    delete newProperty.ui;
 
     if (
       tmpProperties
@@ -184,6 +206,10 @@ class JsonSchema extends React.Component {
         JSONSchema: {
           ...prevState.JSONSchema,
           properties: useProperties
+        },
+        UISchema: {
+          ...prevState.UISchema,
+          ...tmpUISchema
         }
       }
     }, () => {
