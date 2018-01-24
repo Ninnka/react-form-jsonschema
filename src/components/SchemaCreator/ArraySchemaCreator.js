@@ -176,6 +176,9 @@ class ArraySchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
+    data.ui = {
+      options: {}
+    };
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
