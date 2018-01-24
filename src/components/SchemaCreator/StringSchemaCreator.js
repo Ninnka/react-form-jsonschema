@@ -164,22 +164,12 @@ class StringSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
+    // * 如果有设置ui，则将ui添加到UISchema
     if (Object.keys(this.uiCreator.state.ui).length > 0) {
       data.ui = this.uiCreator.state.ui;
     }
     this.props.addNewProperties(data);
-    // * 如果有设置ui，则将ui添加到UISchema
-    // if (Object.keys(this.uiCreator.state.ui).length > 0) {
-    //   let ui = {
-    //     [data.key]: this.uiCreator.state.ui
-    //   };
-    //   this.props.addNewUI({
-    //     owner: data.owner,
-    //     ui
-    //   });
-    // }
-    // * --------------
-    setTimeout(this.resetForm, 0);
+    // setTimeout(this.resetForm, 0);
   }
 
   ownerChange = (value) => {
