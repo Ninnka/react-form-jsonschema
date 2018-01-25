@@ -59,6 +59,18 @@ class JsonSchema extends React.Component {
                   properties: {}
                 }
               }
+            },
+            hg: {
+              type: 'array',
+              title: 'froiehf',
+              items: {
+                type: 'string',
+                title: 'froeih',
+                enum: [
+                  'tu',
+                  'gbyu'
+                ]
+              }
             }
           }
         },
@@ -108,55 +120,136 @@ class JsonSchema extends React.Component {
     let useUISchema = cloneDeep(this.state.UISchema);
     let tmpUISchema = useUISchema; // * 用来定位UISchema具体的位置
 
+    let useFormData = cloneDeep(this.state.FormData);
+    let tmpFormData = useFormData; // * 用来定位FormData具体的位置
+
     for (let item of ownerList) {
       if (
         item !== 'global'
         && tmpProperties[item]
       ) {
+
         tmpProperties = tmpProperties[item];
 
-        if (!useUISchema[item]) {
-          useUISchema[item] = {};
-        }
-        useUISchema = useUISchema[item];
       } else if (
         item !== 'global'
         && tmpProperties.type === 'object'
         && tmpProperties.properties[item]
       ) {
+
         tmpProperties = tmpProperties.properties[item];
 
-        !useUISchema[item] && (useUISchema[item] = {});
-        useUISchema = useUISchema[item];
       } else if (
         item !== 'global'
         && tmpProperties.type === 'array'
         && tmpProperties[item]
       ) {
-        // * 目标为数组是，根据item获取到下一个目标
         tmpProperties = tmpProperties[item];
+      }
 
-        if (item !== 'items') {
-          continue;
+      // * ui相关---------------
+      // * 创建ui对象路径
+      item !== 'global' && !useUISchema[item] && (useUISchema[item] = {});
+      item !== 'global' && (useUISchema = useUISchema[item]);
+      // * ui相关---------------
+
+      // * formData相关------------
+      // * 创建tmpProperties对应的formData
+      let jsType = this.getPropertyJsType(useFormData);
+      if (item !== 'global' && !useFormData[item]) {
+        let tmpD = tmpProperties.type === 'array' ? [] : {};
+        // * 如果useFormData是数组，则添加一个对象进去
+        if (jsType.indexOf('Array') !== -1) {
+          useFormData.push(tmpD);
+          let pos = useFormData.length - 1;
+          useFormData = useFormData[pos];
         }
-        // * 因为是数组，所以需要再次判断获取到的下一个目标的本身的js类型是object还是array
-        if (this.getPropertyJsType(tmpProperties).indexOf('Object') !== -1) {
-          !useUISchema[item] && (useUISchema[item] = {});
-        } else if (this.getPropertyJsType(tmpProperties).indexOf('Array') !== -1) {
-          !useUISchema[item] && (useUISchema[item] = []);
+
+        // * 如果useFormData是对象，则按照通常方法创造子对象
+        jsType.indexOf('Object') !== -1 && !useFormData[item] && (useFormData[item] = tmpD);
+      }
+      item !== 'global' && (useFormData = useFormData[item]);
+      // * formData相关------------
+    }
+
+    // * ui相关---------------
+    // * 设置ui最终位置的js类型与key名
+    if (tmpProperties.type === 'object' || ownerList.length === 1) {
+
+      useUISchema[newProperty.key] = {
+        ...useUISchema[newProperty.key]
+      };
+      useUISchema = useUISchema[newProperty.key];
+
+    } else if (tmpProperties.type === 'array' && newProperty.asFixedItems) {
+
+      if (useUISchema['items'] && Object.keys(useUISchema['items']).length > 0) {
+        useUISchema['additionalItems'] = useUISchema['items'];
+      }
+
+      if (this.getPropertyJsType(useUISchema['items']).indexOf('Array') === -1) {
+        useUISchema['items'] = [];
+      }
+      useUISchema = useUISchema['items'];
+
+    } else if (tmpProperties.type === 'array' && newProperty.coverFixedItems) {
+
+      delete useUISchema['additionalItems'];
+
+      useUISchema['items'] = {};
+      useUISchema = useUISchema['items'];
+
+    } else {
+      let hasArray = this.getPropertyJsType(tmpProperties.items).indexOf('Array');
+
+      if (hasArray !== -1) {
+        useUISchema['additionalItems'] = {};
+        useUISchema = useUISchema['additionalItems'];
+      } else {
+        useUISchema['items'] = {};
+        useUISchema = useUISchema['items'];
+      }
+
+    }
+
+    // * 将ui加入到目标位置
+    newProperty.ui = newProperty.ui ? newProperty.ui : {};
+    if (this.getPropertyJsType(useUISchema).indexOf('Array') !== -1) {
+      let data = {};
+      for (let item of Object.entries(newProperty.ui)) {
+        data['ui:' + item[0]] = item[1];
+      }
+      useUISchema[tmpProperties.items.length] = data;
+      for (let i = 0; i < tmpProperties.items.length; i++) {
+        if (typeof useUISchema[i] === 'undefined') {
+          useUISchema[i] = {};
         }
-        useUISchema = useUISchema[item];
+      }
+    } else if (this.getPropertyJsType(useUISchema).indexOf('Object') !== -1) {
+      for (let item of Object.entries(newProperty.ui)) {
+        useUISchema['ui:' + item[0]] = item[1];
       }
     }
 
-    for (let item of Object.entries(newProperty.ui)) {
-      useUISchema[item[0]] = item[1];
+    delete newProperty.ui;
+    // * ui相关---------------
+
+    // * formData相关------------
+    // * 如果没有设置default，则再formdata中设置对应的key
+    console.log('tmpFormData', tmpFormData);
+    if (newProperty.type === 'object') {
+      useFormData[newProperty.key] = {};
+    } else if (newProperty.type === 'array') {
+      useFormData[newProperty.key] = [];
+    } else if (newProperty.default === undefined) {
+      if (this.getPropertyJsType(useFormData).indexOf('Object') !== -1) {
+        useFormData[newProperty.key] = '';
+      }
+      console.log('newProperty.key', newProperty.key);
+      console.log('useFormData', useFormData);
     }
 
-    console.log('useUISchema', useUISchema);
-    console.log('tmpUISchema', tmpUISchema);
-
-    delete newProperty.ui;
+    // * formData相关------------
 
     if (
       tmpProperties
@@ -202,15 +295,22 @@ class JsonSchema extends React.Component {
     }
 
     this.setState((prevState, props) => {
-      return {
+      let data =  {
         JSONSchema: {
           ...prevState.JSONSchema,
           properties: useProperties
-        },
-        UISchema: {
-          ...prevState.UISchema,
-          ...tmpUISchema
         }
+      };
+      data.UISchema = {
+        ...prevState.UISchema,
+        ...tmpUISchema
+      };
+      data.FormData = {
+        ...prevState.FormData,
+        ...tmpFormData
+      };
+      return {
+        ...data
       }
     }, () => {
       this.messageSuccess({
