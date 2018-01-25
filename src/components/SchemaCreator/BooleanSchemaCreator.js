@@ -32,7 +32,7 @@ class BooleanSchemaCreator extends React.Component {
     }
   }
 
-  ui = {}
+  UIschema = {}
 
   componentWillReceiveProps (nextProps) {
     console.log('nextProps', nextProps);
@@ -124,13 +124,14 @@ class BooleanSchemaCreator extends React.Component {
         owner: ''
       }
     });
-    this.state.ui.setState({
+    this.state.resetForm.setState({
       ui: {}
-    })
+    });
   }
 
   confirmForm = () => {
     console.log('confirmForm');
+    console.log(Object.keys(this.UIschema.state.ui) );
     if (!this.state.booleanSchema.key) {
       return;
     }
@@ -143,9 +144,8 @@ class BooleanSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    if (Object.keys(this.state.ui) > 0) {
-      data.ui = this.state.ui;
-      console.log(this.state.ui);
+    if (Object.keys(this.UIschema.state.ui) > 0) {
+      data.ui = this.UIschema.state.ui;
       // data.ui = this.ui;
     }
     this.props.addNewProperties(data);
@@ -302,7 +302,7 @@ class BooleanSchemaCreator extends React.Component {
         <FormItem label="设置ui：">
           <div className="nested-form-item">
             <UISchema ref={ (ui) => {
-              this.state.ui = ui;
+              this.UIschema = ui;
             }}/>
           </div>
         </FormItem>
