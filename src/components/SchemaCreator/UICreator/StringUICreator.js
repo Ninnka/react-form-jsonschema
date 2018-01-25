@@ -21,7 +21,8 @@ class StringUICreator extends React.Component {
       'textarea',
       'password',
       'color',
-      'file'
+      'file',
+      "alt-datetime"
     ]
   }
 
@@ -100,7 +101,7 @@ class StringUICreator extends React.Component {
     return (
       <>
         <FormItem label="widget">
-          <Select value={ this.state.ui.widget ? this.state.ui.widget : '' } onChange={ this.uiWidgetChange }>
+          <Select allowClear value={ this.state.ui.widget ? this.state.ui.widget : '' } onChange={ this.uiWidgetChange }>
             {
               this.state.widgetList.map((widget, index, arr) => {
                 return <Option key={ widget } value={ widget }>{ widget }</Option>
@@ -159,7 +160,7 @@ class StringUICreator extends React.Component {
 
         <FormItem label="readonly">
           <Checkbox checked={ this.state.ui.readonly !== undefined ? this.state.ui.readonly : false } onChange={ this.uiReadOnlyChange }>
-          勾选后，此string属性生成的表单成员只能读
+            勾选后，此string属性生成的表单成员只能读
           </Checkbox>
         </FormItem>
       </>

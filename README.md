@@ -33,6 +33,7 @@
         - password
         - color
         - file(与设置format file效果相同)
+        - alt-datatime(与设置format data-time效果相同)
       - ui:placeholder
       - ui:autofocus
       - ui:emptyValue
@@ -42,18 +43,6 @@
       - ui:readonly
       - ui:title
       - ui:description
-  - object类型
-    - 选择所属的对象
-    - 添加properties
-    - 设置key
-    - 设置title
-    - 设置description
-    - 设置default
-    - 设置required
-    - 选择ui
-      - ui:order
-      - ui:disabled
-      - ui:readonly
   - number(integer)类型
     - 选择所属的对象
     - 设置title
@@ -78,6 +67,18 @@
       - ui:readonly
       - ui:title
       - ui:description
+  - object类型
+    - 选择所属的对象
+    - 添加properties
+    - 设置key
+    - 设置title
+    - 设置description
+    - 设置default
+    - 设置required
+    - 选择ui
+      - ui:order
+      - ui:disabled
+      - ui:readonly
   - boolean类型
     - 选择所属的对象
     - 设置title
@@ -90,12 +91,14 @@
         - select
       - ui:disabled
       - ui:readonly
+      - ui:inline
   - array类型
     - 选择所属的对象
     - 设置title
     - 设置description
     - 设置default（数组类型）
     - 设置minItems
+    - 设置uniqueItems(生成的表单成员是否唯一)
     - 设置固定成员（items为数组）
       - 可删除固定成员
     - 设置可选成员（items为对象）
@@ -103,7 +106,6 @@
       - items可设置一下key
         - default
         - enum
-          - 使用enum时可设置uniqueItems(成员是否唯一)
     - 设置items，一个对象，成员都按照对象内的描述来创建
     - 设置ui
       - ui:options
@@ -121,6 +123,8 @@
   - Id prefix（未来支持）
   - Custom validation（未来支持）
   - Custom error messages（未来支持）
+  - Property dependency
+  - schema dependency
   - Advanced customization (编程式)
     - Field template
     - Array Field Template
@@ -132,6 +136,19 @@
     - Custom descriptions
 
 ## Update Log
+
+### 2018-01-26
+
+- object和array类型增加编辑功能
+- 完善预览生成的表单功能
+
+### 2018-01-25
+
+- 优化jsonschema数据结构
+- Number、Array、Object类型加入UI选择和输入
+- 增加创建根目录为非object类型的jsonschema(string|number|boolean|array),此功能会覆盖global的object
+- 当根目录为数组时，完善添加元素的方法
+- 加入defination功能的雏形
 
 ### 2018-01-24
 
