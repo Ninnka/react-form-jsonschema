@@ -3,6 +3,8 @@ import React from 'react';
 // * 样式
 
 
+import ArrayUICreator from '@components/SchemaCreator/UICreator/ArrayUICreator';
+
 import { cloneDeep } from 'lodash';
 
 // * antd组件
@@ -11,13 +13,15 @@ import {
   Input,
   Select,
   Button,
-  Checkbox
+  Checkbox,
+  Modal
 } from 'antd';
 
 const FormItem = Form.Item;
 const Option = Select.Option;
 const TextArea = Input.TextArea;
 const InputGroup = Input.Group;
+const confirm = Modal.confirm;
 
 class ArraySchemaCreator extends React.Component {
 
@@ -48,6 +52,8 @@ class ArraySchemaCreator extends React.Component {
     fixItemSelected: ''
   }
 
+  uiCreator = null
+
   typeList = [
     'string',
     'number',
@@ -56,17 +62,26 @@ class ArraySchemaCreator extends React.Component {
   ]
 
   componentWillReceiveProps (nextProps) {
-    console.log('nextProps', nextProps);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    console.log('o nextProps', nextProps);
+    let tmpOwnerList = [];
+    if (nextProps.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
   }
 
   componentDidMount () {
-    console.log('properties: ', this.props.properties);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
-    console.log('tmpOwnerList', tmpOwnerList);
+    console.log('o properties: ', this.props.properties);
+    let tmpOwnerList = [];
+    if (this.props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -77,7 +92,6 @@ class ArraySchemaCreator extends React.Component {
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
     let propertiesEntryList = Object.entries(properties);
-    // console.log('path properties', path, propertiesEntryList);
     for (let item of propertiesEntryList) {
       if (item[1].type === 'object') {
         tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
@@ -85,14 +99,13 @@ class ArraySchemaCreator extends React.Component {
         tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
       }
     }
-    // console.log('path tmpOwnerList', path, tmpOwnerList);
     return tmpOwnerList;
   }
 
   compuOwnerListObject = (path, item, exclude = false) => {
     let tmpOwnerList = [];
     !exclude && tmpOwnerList.push({
-      path: path + '~/~' + item[0],
+      path: (path + '~/~' + item[0]).replace(/(^~\/~)|(~\/~$)/g, ''),
       type: 'object'
     });
     tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
@@ -103,7 +116,7 @@ class ArraySchemaCreator extends React.Component {
     let tmpOwnerList = [];
     let tmpPath = path + '~/~' + item[0];
     !exclude && tmpOwnerList.push({
-      path: tmpPath,
+      path: tmpPath.replace(/(^~\/~)|(~\/~$)/g, ''),
       type: 'array'
     });
     if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
@@ -133,6 +146,19 @@ class ArraySchemaCreator extends React.Component {
     return tmpOwnerList;
   }
 
+  // * ------------
+
+  showConfirm = () => {
+    confirm({
+      title: '提示',
+      content: '所属对象为空时将会覆盖根目录对象中的属性',
+      onOk: () => {
+        this.submitForm();
+      },
+      onCancel: () => {}
+    });
+  }
+
   resetForm = () => {
     this.setState({
       additionalItemsStatus: false,
@@ -159,6 +185,10 @@ class ArraySchemaCreator extends React.Component {
       },
       fixItemSelected: ''
     });
+    this.uiCreator.setState({
+      ui: {},
+      uiOptions: {}
+    });
   }
 
   confirmForm = () => {
@@ -166,6 +196,14 @@ class ArraySchemaCreator extends React.Component {
     if (!this.state.arraySchema.key) {
       return;
     }
+    if (this.state.arraySchema.owner) {
+      this.submitForm();
+    } else {
+      this.showConfirm();
+    }
+  }
+
+  submitForm = () => {
     let data = {
       ...this.state.arraySchema,
       type: 'array',
@@ -176,12 +214,20 @@ class ArraySchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    data.ui = {
-      options: {}
-    };
+    if (Object.keys(this.uiCreator.state.ui).length > 0) {
+      data.ui = this.uiCreator.state.ui;
+    }
+    if (Object.keys(this.uiCreator.state.uiOptions).length > 0) {
+      data.ui = {
+        ...data.ui
+      };
+      data.ui['options'] = this.uiCreator.state.uiOptions;
+    }
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
+
+  // * ------------
 
   ownerChange = (value) => {
     console.log('ownerChange value:', value);
@@ -453,6 +499,16 @@ class ArraySchemaCreator extends React.Component {
 
         <FormItem label="default">
           <TextArea value={ this.state.arraySchema.default.join(',') } onInput={ this.defaultInput }></TextArea>
+        </FormItem>
+
+        <FormItem label="设置ui">
+          <div className="nested-form-item">
+            <ArrayUICreator ref={
+              (uiCreator) => {
+                this.uiCreator = uiCreator;
+              }
+            }></ArrayUICreator>
+          </div>
         </FormItem>
 
         {

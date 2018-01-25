@@ -2,6 +2,7 @@ import React from 'react';
 
 // * 样式
 
+import ObjectUICreator from '@components/SchemaCreator/UICreator/ObjectUICreator';
 
 // * antd组件
 import {
@@ -9,11 +10,13 @@ import {
   Input,
   Select,
   Button,
-  Checkbox
+  Checkbox,
+  Modal
 } from 'antd';
 
 const FormItem = Form.Item;
 const Option = Select.Option;
+const confirm = Modal.confirm;
 
 class ObjectSchemaCreator extends React.Component {
 
@@ -26,22 +29,34 @@ class ObjectSchemaCreator extends React.Component {
       key: '',
       title: '',
       description: '',
-      required: '',
+      required: [],
       owner: ''
     }
   }
 
+  uiCreator = null
+
   componentWillReceiveProps (nextProps) {
-    console.log('nextProps', nextProps);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    console.log('o nextProps', nextProps);
+    let tmpOwnerList = [];
+    if (nextProps.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
   }
 
   componentDidMount () {
-    console.log('properties: ', this.props.properties);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    console.log('o properties: ', this.props.properties);
+    let tmpOwnerList = [];
+    if (this.props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -52,7 +67,6 @@ class ObjectSchemaCreator extends React.Component {
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
     let propertiesEntryList = Object.entries(properties);
-    // console.log('path properties', path, propertiesEntryList);
     for (let item of propertiesEntryList) {
       if (item[1].type === 'object') {
         tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
@@ -60,14 +74,13 @@ class ObjectSchemaCreator extends React.Component {
         tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
       }
     }
-    // console.log('path tmpOwnerList', path, tmpOwnerList);
     return tmpOwnerList;
   }
 
   compuOwnerListObject = (path, item, exclude = false) => {
     let tmpOwnerList = [];
     !exclude && tmpOwnerList.push({
-      path: path + '~/~' + item[0],
+      path: (path + '~/~' + item[0]).replace(/(^~\/~)|(~\/~$)/g, ''),
       type: 'object'
     });
     tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
@@ -78,7 +91,7 @@ class ObjectSchemaCreator extends React.Component {
     let tmpOwnerList = [];
     let tmpPath = path + '~/~' + item[0];
     !exclude && tmpOwnerList.push({
-      path: tmpPath,
+      path: tmpPath.replace(/(^~\/~)|(~\/~$)/g, ''),
       type: 'array'
     });
     if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
@@ -108,6 +121,19 @@ class ObjectSchemaCreator extends React.Component {
     return tmpOwnerList;
   }
 
+  // * ------------
+
+  showConfirm = () => {
+    confirm({
+      title: '提示',
+      content: '所属对象为空时将会覆盖根目录对象中的属性',
+      onOk: () => {
+        this.submitForm();
+      },
+      onCancel: () => {}
+    });
+  }
+
   resetForm = () => {
     this.setState({
       ownerTypeStatus: 'object',
@@ -117,9 +143,12 @@ class ObjectSchemaCreator extends React.Component {
         key: '',
         title: '',
         description: '',
-        required: '',
+        required: [],
         owner: ''
       }
+    });
+    this.uiCreator.setState({
+      ui: {}
     });
   }
 
@@ -127,6 +156,14 @@ class ObjectSchemaCreator extends React.Component {
     if (!this.state.objectSchema.key) {
       return;
     }
+    if (this.state.objectSchema.owner) {
+      this.submitForm();
+    } else {
+      this.showConfirm();
+    }
+  }
+
+  submitForm = () => {
     let data = {
       ...this.state.objectSchema,
       type: 'object',
@@ -136,6 +173,10 @@ class ObjectSchemaCreator extends React.Component {
       data.asFixedItems = true;
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
+    }
+    // * 如果有设置ui，则将ui添加到UISchema
+    if (Object.keys(this.uiCreator.state.ui).length > 0) {
+      data.ui = this.uiCreator.state.ui;
     }
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
@@ -198,7 +239,7 @@ class ObjectSchemaCreator extends React.Component {
       return {
         objectSchema: {
           ...prevState.objectSchema,
-          required: tmpValue
+          required: tmpValue.split(',')
         }
       };
     });
@@ -228,7 +269,7 @@ class ObjectSchemaCreator extends React.Component {
     return (
       <Form>
         <FormItem label="选择所属对象">
-          <Select value={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
+          <Select allowClear value={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
                 return (
@@ -268,8 +309,19 @@ class ObjectSchemaCreator extends React.Component {
           <Input value={ this.state.objectSchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
         <FormItem label="required">
-          <Input value={ this.state.objectSchema.required } onInput={ this.requiredInput }></Input>
+          <Input value={ this.state.objectSchema.required.join(',') } onInput={ this.requiredInput }></Input>
         </FormItem>
+
+        <FormItem label="设置ui">
+          <div className="nested-form-item">
+            <ObjectUICreator ref={
+              (uiCreator) => {
+                this.uiCreator = uiCreator;
+              }
+            }></ObjectUICreator>
+          </div>
+        </FormItem>
+
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
           <Button type="primary" onClick={ this.confirmForm }>确认</Button>

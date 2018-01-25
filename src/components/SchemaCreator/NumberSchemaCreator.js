@@ -2,6 +2,7 @@ import React from 'react';
 
 // * 样式
 
+import NumberUICreator from '@components/SchemaCreator/UICreator/NumberUICreator';
 
 // * antd组件
 import {
@@ -9,12 +10,14 @@ import {
   Input,
   Select,
   Button,
-  Checkbox
+  Checkbox,
+  Modal
 } from 'antd';
 
 const FormItem = Form.Item;
 const Option = Select.Option;
 const TextArea = Input.TextArea;
+const confirm = Modal.confirm;
 
 class NumberSchemaCreator extends React.Component {
 
@@ -29,8 +32,7 @@ class NumberSchemaCreator extends React.Component {
       key: '',
       title: '',
       description: '',
-      owner: '',
-      ui: ''
+      owner: ''
     },
     numberSchemaAddition: {
       default: '',
@@ -41,36 +43,32 @@ class NumberSchemaCreator extends React.Component {
     }
   }
 
+  uiCreator = null;
 
   componentWillReceiveProps (nextProps) {
-    console.log('nextProps', nextProps);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    console.log('o nextProps', nextProps);
+    let tmpOwnerList = [];
+    if (nextProps.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
   }
 
   componentDidMount () {
-    console.log('properties: ', this.props.properties);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    console.log('o properties: ', this.props.properties);
+    let tmpOwnerList = [];
+    if (this.props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
-  }
-
-  // * ------------
-
-  checkNumberDotOnly = (value) => {
-    return value.indexOf('.') !== 0
-           && value.indexOf('.') === value.lastIndexOf('.')
-           && value.indexOf('.') === value.length - 1;
-  }
-
-  checkNumberCommaOnly = (value) => {
-    console.log('value', value);
-    return value.indexOf(',') !== 0
-           && value.indexOf(',') === value.lastIndexOf(',')
-           && value.indexOf(',') === value.length - 1;
   }
 
   // * ------------
@@ -78,7 +76,6 @@ class NumberSchemaCreator extends React.Component {
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
     let propertiesEntryList = Object.entries(properties);
-    // console.log('path properties', path, propertiesEntryList);
     for (let item of propertiesEntryList) {
       if (item[1].type === 'object') {
         tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
@@ -86,14 +83,13 @@ class NumberSchemaCreator extends React.Component {
         tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
       }
     }
-    // console.log('path tmpOwnerList', path, tmpOwnerList);
     return tmpOwnerList;
   }
 
   compuOwnerListObject = (path, item, exclude = false) => {
     let tmpOwnerList = [];
     !exclude && tmpOwnerList.push({
-      path: path + '~/~' + item[0],
+      path: (path + '~/~' + item[0]).replace(/(^~\/~)|(~\/~$)/g, ''),
       type: 'object'
     });
     tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
@@ -104,7 +100,7 @@ class NumberSchemaCreator extends React.Component {
     let tmpOwnerList = [];
     let tmpPath = path + '~/~' + item[0];
     !exclude && tmpOwnerList.push({
-      path: tmpPath,
+      path: tmpPath.replace(/(^~\/~)|(~\/~$)/g, ''),
       type: 'array'
     });
     if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
@@ -134,6 +130,19 @@ class NumberSchemaCreator extends React.Component {
     return tmpOwnerList;
   }
 
+  // * ------------
+
+  showConfirm = () => {
+    confirm({
+      title: '提示',
+      content: '所属对象为空时将会覆盖根目录对象中的属性',
+      onOk: () => {
+        this.submitForm();
+      },
+      onCancel: () => {}
+    });
+  }
+
   resetForm = () => {
     this.setState({
       enumStatus: false,
@@ -145,8 +154,7 @@ class NumberSchemaCreator extends React.Component {
         key: '',
         title: '',
         description: '',
-        owner: '',
-        ui: ''
+        owner: ''
       },
       numberSchemaAddition: {
         default: '',
@@ -155,7 +163,10 @@ class NumberSchemaCreator extends React.Component {
         maximum: '',
         multipleOf: ''
       }
-    })
+    });
+    this.uiCreator.setState({
+      ui: {}
+    });
   }
 
   confirmForm = () => {
@@ -163,6 +174,14 @@ class NumberSchemaCreator extends React.Component {
     if (!this.state.numberSchema.key) {
       return;
     }
+    if (this.state.numberSchema.owner) {
+      this.submitForm();
+    } else {
+      this.showConfirm();
+    }
+  }
+
+  submitForm = () => {
     let data = {
       ...this.state.numberSchema,
       type: this.state.asInteger ? 'integer' : 'number'
@@ -177,13 +196,18 @@ class NumberSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
+    // * 如果有设置ui，则将ui添加到UISchema
+    if (Object.keys(this.uiCreator.state.ui).length > 0) {
+      data.ui = this.uiCreator.state.ui;
+    }
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
 
+  // * ------------
+
   ownerChange = (value) => {
     console.log('ownerChange value:', value);
-    // this.numberSchema.owner = value;
     this.setState((prevState, props) => {
       return {
         numberSchema: {
@@ -412,18 +436,6 @@ class NumberSchemaCreator extends React.Component {
     }
   }
 
-  uiChange = (value) => {
-    console.log('uiChange value:', value);
-    this.setState((prevState, props) => {
-      return {
-        numberSchema: {
-          ...prevState.numberSchema,
-          ui: value
-        }
-      };
-    });
-  }
-
   // * ------------
 
   asFixedItemsStatusChange = (event) => {
@@ -460,11 +472,26 @@ class NumberSchemaCreator extends React.Component {
 
   // * ------------
 
+  checkNumberDotOnly = (value) => {
+    return value.indexOf('.') !== 0
+           && value.indexOf('.') === value.lastIndexOf('.')
+           && value.indexOf('.') === value.length - 1;
+  }
+
+  checkNumberCommaOnly = (value) => {
+    console.log('value', value);
+    return value.indexOf(',') !== 0
+           && value.indexOf(',') === value.lastIndexOf(',')
+           && value.indexOf(',') === value.length - 1;
+  }
+
+  // * ------------
+
   render () {
     return (
       <Form>
         <FormItem label="选择所属对象">
-          <Select value={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
+          <Select allowClear value={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
             {
               this.state.ownerList.map((ele, index, arr) => {
                 return (
@@ -494,39 +521,54 @@ class NumberSchemaCreator extends React.Component {
             </div>
           }
         </FormItem>
+
         <FormItem label="限制为integer">
           <Checkbox checked={ this.state.asInteger } onChange={ this.asIntegerStatusChange }>选中后，会将数值强制转换为整型</Checkbox>
         </FormItem>
+
         <FormItem label="key">
           <Input value={ this.state.numberSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
+
         <FormItem label="title">
           <Input value={ this.state.numberSchema.title } onInput={ this.titleInput }></Input>
         </FormItem>
+
         <FormItem label="description">
           <Input value={ this.state.numberSchema.description } onInput={ this.descriptionInput }></Input>
         </FormItem>
+
         <FormItem label="default">
           <Input value={ this.state.numberSchemaAddition.default } onInput={ this.defaultInput }></Input>
         </FormItem>
-        <FormItem label="ui">
-          <Select value={ this.state.numberSchema.ui } onChange={ this.uiChange }>
-            <Option value="ui">UI</Option>
-          </Select>
-        </FormItem>
+
         <FormItem label="enum">
           <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
           <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchemaAddition.enum ? this.state.numberSchemaAddition.enum.join(',') : '' } onInput={ this.enumValueInput }></TextArea>
         </FormItem>
+
         <FormItem label="最小值">
           <Input value={ this.state.numberSchemaAddition.minimum } onInput={ this.minimumInput }></Input>
         </FormItem>
+
         <FormItem label="最大值">
           <Input value={ this.state.numberSchemaAddition.maximum } onInput={ this.maximumInput }></Input>
         </FormItem>
+
         <FormItem label="值差">
           <Input value={ this.state.numberSchemaAddition.multipleOf } onInput={ this.multipleOfInput }></Input>
         </FormItem>
+
+        <FormItem label="设置ui">
+          <div className="nested-form-item">
+            <NumberUICreator ref={
+              (uiCreator) => {
+                this.uiCreator = uiCreator;
+              }
+            }></NumberUICreator>
+          </div>
+        </FormItem>
+
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
           <Button type="primary" onClick={ this.confirmForm }>确认</Button>
