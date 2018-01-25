@@ -10,11 +10,13 @@ import {
   Input,
   Select,
   Button,
-  Checkbox
+  Checkbox,
+  Modal
 } from 'antd';
 
 const FormItem = Form.Item;
 const Option = Select.Option;
+const confirm = Modal.confirm;
 
 class BooleanSchemaCreator extends React.Component {
 
@@ -35,16 +37,27 @@ class BooleanSchemaCreator extends React.Component {
   UIschema = {}
 
   componentWillReceiveProps (nextProps) {
-    console.log('nextProps', nextProps);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    console.log('o nextProps', nextProps);
+    let tmpOwnerList = [];
+    if (nextProps.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
+
   }
 
   componentDidMount () {
-    console.log('properties: ', this.props.properties);
-    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    console.log('o properties: ', this.props.properties);
+    let tmpOwnerList = [];
+    if (this.props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -131,9 +144,6 @@ class BooleanSchemaCreator extends React.Component {
 
   confirmForm = () => {
     console.log('confirmForm');
-    if (!this.state.booleanSchema.key) {
-      return;
-    }
     let data = {
       ...this.state.booleanSchema,
       type: 'boolean'
@@ -145,7 +155,6 @@ class BooleanSchemaCreator extends React.Component {
     }
     if (Object.keys(this.UIschema.state.ui).length > 0) {
       data.ui = this.UIschema.state.ui;
-      // data.ui = this.ui;
     }
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
@@ -242,6 +251,27 @@ class BooleanSchemaCreator extends React.Component {
     });
   }
 
+  handleConfirm = () => {
+    if (!this.state.booleanSchema.key) {
+      return;
+    }
+    if (this.state.booleanSchema.owner !== '') {
+      this.confirmForm();
+    } else {
+      this.showMessage();
+    }
+  }
+
+  showMessage = () => {
+    confirm({
+      title: '消息提示',
+      content: '提示：所属对象为空将覆盖根目录已有的属性，是否继续？',
+      onOk: () => {
+        this.confirmForm();
+      }
+    });
+  }
+
   // * ------------
 
   render () {
@@ -307,7 +337,7 @@ class BooleanSchemaCreator extends React.Component {
         </FormItem>
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
-          <Button type="primary" onClick={ this.confirmForm }>确认</Button>
+          <Button type="primary" onClick={ this.handleConfirm }>确认</Button>
         </FormItem>
       </Form>
     );
