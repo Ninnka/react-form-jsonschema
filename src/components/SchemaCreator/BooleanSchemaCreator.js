@@ -1,5 +1,5 @@
 import React from 'react';
-import UISchema from '@components/SchemaCreator/UIschemaCreator/BooleanUICreator'
+import UISchema from '@components/SchemaCreator/UICreator/BooleanUICreator'
 
 // * 样式
 
@@ -36,7 +36,7 @@ class BooleanSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('nextProps', nextProps);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', nextProps.properties));
+    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -44,7 +44,7 @@ class BooleanSchemaCreator extends React.Component {
 
   componentDidMount () {
     console.log('properties: ', this.props.properties);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', this.props.properties));
+    let tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -124,14 +124,13 @@ class BooleanSchemaCreator extends React.Component {
         owner: ''
       }
     });
-    this.state.resetForm.setState({
+    this.UIschema.setState({
       ui: {}
     });
   }
 
   confirmForm = () => {
     console.log('confirmForm');
-    console.log(Object.keys(this.UIschema.state.ui) );
     if (!this.state.booleanSchema.key) {
       return;
     }
@@ -144,7 +143,7 @@ class BooleanSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    if (Object.keys(this.UIschema.state.ui) > 0) {
+    if (Object.keys(this.UIschema.state.ui).length > 0) {
       data.ui = this.UIschema.state.ui;
       // data.ui = this.ui;
     }
