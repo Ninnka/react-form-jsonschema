@@ -94,7 +94,8 @@
     - 选择所属的对象
     - 设置title
     - 设置description
-    - 设置default
+    - 设置default（数组类型）
+    - 设置minItems
     - 设置固定成员（items为数组）
       - 可删除固定成员
     - 设置可选成员（items为对象）
@@ -135,6 +136,8 @@
 ### 2018-01-24
 
 - 完善优化创建UISchema的方法
+- 增加创建FormData的功能
+- 设定子组件中的基本的uiSchema创建条件
 
 ### 2018-01-23
 

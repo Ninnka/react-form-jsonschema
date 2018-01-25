@@ -16,6 +16,7 @@ import {
 
 const FormItem = Form.Item;
 const Option = Select.Option;
+const TextArea = Input.TextArea;
 
 class StringSchemaCreator extends React.Component {
 
@@ -29,10 +30,11 @@ class StringSchemaCreator extends React.Component {
       key: '',
       title: '',
       description: '',
-      default: '',
       owner: ''
     },
     stringSchemaAddition: {
+      default: '',
+      enum: '',
       format: ''
     }
   }
@@ -135,10 +137,11 @@ class StringSchemaCreator extends React.Component {
         key: '',
         title: '',
         description: '',
-        default: '',
         owner: ''
       },
       stringSchemaAddition: {
+        default: '',
+        enum: '',
         format: ''
       }
     });
@@ -156,9 +159,11 @@ class StringSchemaCreator extends React.Component {
       ...this.state.stringSchema,
       type: 'string'
     };
-    if (this.state.formatStatus) {
-      data.format = this.state.stringSchemaAddition.format;
-    }
+
+    this.state.formatStatus && (data.format = this.state.stringSchemaAddition.format);
+    this.state.enumStatus && (data.enum = this.state.stringSchemaAddition.enum);
+    this.state.stringSchemaAddition.default && (data.default = this.state.stringSchemaAddition.default);
+
     if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
       data.asFixedItems = true;
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
@@ -225,8 +230,8 @@ class StringSchemaCreator extends React.Component {
     let tmpValue = event.target.value;
     this.setState((prevState, props) => {
       return {
-        stringSchema: {
-          ...prevState.stringSchema,
+        stringSchemaAddition: {
+          ...prevState.stringSchemaAddition,
           default: tmpValue
         }
       };
@@ -252,6 +257,34 @@ class StringSchemaCreator extends React.Component {
         };
       });
     }
+  }
+
+  enumStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      let data = {
+        ...prevState.stringSchemaAddition,
+      };
+      if (!checked) {
+        data.enum = '';
+      }
+      return {
+        stringSchemaAddition: data,
+        enumStatus: checked
+      };
+    });
+  }
+
+  enumInput = (event) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      return {
+        stringSchemaAddition: {
+          ...prevState.stringSchemaAddition,
+          enum: tmpValue
+        }
+      }
+    });
   }
 
   formatStatusChange = (event) => {
@@ -280,18 +313,6 @@ class StringSchemaCreator extends React.Component {
         }
       };
     });
-  }
-
-  uiChange = (value) => {
-    // console.log('uiChange value:', value);
-    // this.setState((prevState, props) => {
-    //   return {
-    //     stringSchema: {
-    //       ...prevState.stringSchema,
-    //       ui: value
-    //     }
-    //   };
-    // });
   }
 
   // * ------------
@@ -362,11 +383,16 @@ class StringSchemaCreator extends React.Component {
         </FormItem>
 
         <FormItem label="default">
-          <Input value={ this.state.stringSchema.default } onInput={ this.defaultInput }></Input>
+          <Input value={ this.state.stringSchemaAddition.default } onInput={ this.defaultInput }></Input>
         </FormItem>
 
         <FormItem label="最小长度">
           <Input value={ this.state.stringSchema.minLength } onInput={ this.minLengthInput }></Input>
+        </FormItem>
+
+        <FormItem label="enum">
+          <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
+          <TextArea disabled={ !this.state.enumStatus } value={ this.state.stringSchemaAddition.enum } onChange={ this.enumInput }></TextArea>
         </FormItem>
 
         <FormItem label="format">
@@ -381,15 +407,12 @@ class StringSchemaCreator extends React.Component {
         </FormItem>
 
         <FormItem label="设置ui">
-          {/* <Select value={ this.state.stringSchema.ui } onChange={ this.uiChange }>
-            <Option value="ui">UI</Option>
-          </Select> */}
           <div className="nested-form-item">
             <StringUICreator ref={
               (uiCreator) => {
                 this.uiCreator = uiCreator;
               }
-            } uiChange={ this.uiChange }></StringUICreator>
+            }></StringUICreator>
           </div>
         </FormItem>
 
