@@ -1,4 +1,5 @@
 import React from 'react';
+import UISchema from '@components/SchemaCreator/UIschemaCreator/BooleanUICreator'
 
 // * 样式
 
@@ -27,10 +28,11 @@ class BooleanSchemaCreator extends React.Component {
       title: '',
       description: '',
       default: '',
-      owner: '',
-      ui: ''
+      owner: ''
     }
   }
+
+  ui = {}
 
   componentWillReceiveProps (nextProps) {
     console.log('nextProps', nextProps);
@@ -119,10 +121,12 @@ class BooleanSchemaCreator extends React.Component {
         title: '',
         description: '',
         default: '',
-        owner: '',
-        ui: ''
+        owner: ''
       }
     });
+    this.state.ui.setState({
+      ui: {}
+    })
   }
 
   confirmForm = () => {
@@ -138,6 +142,11 @@ class BooleanSchemaCreator extends React.Component {
       data.asFixedItems = true;
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
+    }
+    if (Object.keys(this.state.ui) > 0) {
+      data.ui = this.state.ui;
+      console.log(this.state.ui);
+      // data.ui = this.ui;
     }
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
@@ -290,12 +299,13 @@ class BooleanSchemaCreator extends React.Component {
           </Select>
         </FormItem>
 
-        <FormItem label="ui">
-          <Select value={ this.state.booleanSchema.ui } onChange={ this.uiChange }>
-            <Option value="ui">UI</Option>
-          </Select>
+        <FormItem label="设置ui：">
+          <div className="nested-form-item">
+            <UISchema ref={ (ui) => {
+              this.state.ui = ui;
+            }}/>
+          </div>
         </FormItem>
-
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
           <Button type="primary" onClick={ this.confirmForm }>确认</Button>
