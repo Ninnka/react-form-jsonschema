@@ -1,4 +1,5 @@
 import React from 'react';
+import UISchema from '@components/SchemaCreator/UICreator/BooleanUICreator'
 
 // * 样式
 
@@ -9,11 +10,13 @@ import {
   Input,
   Select,
   Button,
-  Checkbox
+  Checkbox,
+  Modal
 } from 'antd';
 
 const FormItem = Form.Item;
 const Option = Select.Option;
+const confirm = Modal.confirm;
 
 class BooleanSchemaCreator extends React.Component {
 
@@ -27,22 +30,34 @@ class BooleanSchemaCreator extends React.Component {
       title: '',
       description: '',
       default: '',
-      owner: '',
-      ui: ''
+      owner: ''
     }
   }
 
+  UIschema = {}
+
   componentWillReceiveProps (nextProps) {
-    console.log('nextProps', nextProps);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', nextProps.properties));
+    console.log('o nextProps', nextProps);
+    let tmpOwnerList = [];
+    if (nextProps.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
+    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
+
   }
 
   componentDidMount () {
-    console.log('properties: ', this.props.properties);
-    let tmpOwnerList = ['global'].concat(this.compuOwnerList('global', this.props.properties));
+    console.log('o properties: ', this.props.properties);
+    let tmpOwnerList = [];
+    if (this.props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
+    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    }
     this.setState({
       ownerList: tmpOwnerList
     });
@@ -119,17 +134,16 @@ class BooleanSchemaCreator extends React.Component {
         title: '',
         description: '',
         default: '',
-        owner: '',
-        ui: ''
+        owner: ''
       }
+    });
+    this.UIschema.setState({
+      ui: {}
     });
   }
 
   confirmForm = () => {
     console.log('confirmForm');
-    if (!this.state.booleanSchema.key) {
-      return;
-    }
     let data = {
       ...this.state.booleanSchema,
       type: 'boolean'
@@ -138,6 +152,9 @@ class BooleanSchemaCreator extends React.Component {
       data.asFixedItems = true;
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
+    }
+    if (Object.keys(this.UIschema.state.ui).length > 0) {
+      data.ui = this.UIschema.state.ui;
     }
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
@@ -234,6 +251,27 @@ class BooleanSchemaCreator extends React.Component {
     });
   }
 
+  handleConfirm = () => {
+    if (!this.state.booleanSchema.key) {
+      return;
+    }
+    if (this.state.booleanSchema.owner !== '') {
+      this.confirmForm();
+    } else {
+      this.showMessage();
+    }
+  }
+
+  showMessage = () => {
+    confirm({
+      title: '消息提示',
+      content: '提示：所属对象为空将覆盖根目录已有的属性，是否继续？',
+      onOk: () => {
+        this.confirmForm();
+      }
+    });
+  }
+
   // * ------------
 
   render () {
@@ -290,15 +328,16 @@ class BooleanSchemaCreator extends React.Component {
           </Select>
         </FormItem>
 
-        <FormItem label="ui">
-          <Select value={ this.state.booleanSchema.ui } onChange={ this.uiChange }>
-            <Option value="ui">UI</Option>
-          </Select>
+        <FormItem label="设置ui：">
+          <div className="nested-form-item">
+            <UISchema ref={ (ui) => {
+              this.UIschema = ui;
+            }}/>
+          </div>
         </FormItem>
-
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
-          <Button type="primary" onClick={ this.confirmForm }>确认</Button>
+          <Button type="primary" onClick={ this.handleConfirm }>确认</Button>
         </FormItem>
       </Form>
     );
