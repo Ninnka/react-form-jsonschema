@@ -23,6 +23,62 @@ class JsonSchema extends React.Component {
 
   state = {
     JSONSchema: {
+      definitions: {
+        Thing: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              title: "Default title",
+              definitions: {
+                Hg: {
+                  type: "string",
+                  title: "nyrethy"
+                }
+              }
+            }
+          },
+          definitions: {
+            News: {
+              type: "string",
+              title: "a",
+              default: "dd"
+            },
+            Ew: {
+              type: 'array',
+              title: 'feiw',
+              items: [
+                {
+                  type: 'string',
+                  title: 'ruwe'
+                }
+              ]
+            }
+          }
+        },
+        Shing: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              title: "Default title"
+            }
+          },
+          definitions: {
+            Io: {
+              type: "number",
+              title: "a",
+              default: "dd",
+              definitions: {
+                Rt: {
+                  type: "string",
+                  title: "uriqy"
+                }
+              }
+            }
+          }
+        }
+      },
       type: 'array',
       title: 'fw items',
       items: [{
@@ -38,7 +94,6 @@ class JsonSchema extends React.Component {
         title: 'bytrhjh',
         properties: {}
       }
-      // definitions: {},
       // type: 'object',
       // title: 'outer-object-title',
       // description: 'outer-object-desc',
@@ -381,6 +436,15 @@ class JsonSchema extends React.Component {
     });
   }
 
+  addNewDefinition = (newDefinition) => {
+    delete newDefinition.ui;
+
+    console.log('addNewDefinition newDefinition:', newDefinition);
+
+    let defOwner = newDefinition.defOwner;
+    let defOwnerList = defOwner.split('~/~');
+  }
+
   // * ------------
 
   messageSuccess = (param = {
@@ -414,6 +478,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></ObjectSchemaCreator>
             </div>
           </TabPane>
@@ -425,6 +493,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></StringSchemaCreator>
             </div>
           </TabPane>
@@ -436,6 +508,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></NumberSchemaCreator>
             </div>
           </TabPane>
@@ -447,6 +523,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></BooleanSchemaCreator>
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
@@ -457,6 +537,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></ArraySchemaCreator>
             </div>
           </TabPane>

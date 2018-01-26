@@ -114,8 +114,10 @@
         - removeable
       - ui:disabled
       - ui:readonly
+  - Schema definitions and references
 - 已下特性未支持
-  - Schema definitions and references（未来支持）
+  - Property dependency（未来支持）
+  - schema dependency（未来支持）
   - Custom widget components（未来支持）
   - Custom CSS class names（未来支持）
   - Custom labels for enum fields（未来支持）
@@ -123,8 +125,6 @@
   - Id prefix（未来支持）
   - Custom validation（未来支持）
   - Custom error messages（未来支持）
-  - Property dependency
-  - schema dependency
   - Advanced customization (编程式)
     - Field template
     - Array Field Template
@@ -137,13 +137,16 @@
 
 ## Update Log
 
+### 2018-01-27
+
+- object和array类型增加编辑功能
+- 完善预览生成的表单功能
+
 ### 2018-01-26
 
 - 修复添加元素的方法在根目录类型为array的一个bug
 - Array类型增加uniqueItems选项
-- 加入defination功能的雏形
-- object和array类型增加编辑功能
-- 完善预览生成的表单功能
+- 增加获取defination列表的功能
 
 ### 2018-01-25
 
@@ -151,6 +154,7 @@
 - Number、Array、Object类型加入UI选择和输入
 - 增加创建根目录为非object类型的jsonschema(string|number|boolean|array),此功能会覆盖global的object
 - 当根目录为数组时，完善添加元素的方法
+- 加入defination功能的雏形
 
 ### 2018-01-24
 
