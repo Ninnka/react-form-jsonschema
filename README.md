@@ -139,6 +139,9 @@
 
 ### 2018-01-26
 
+- 修复添加元素的方法在根目录类型为array的一个bug
+- Array类型增加uniqueItems选项
+- 加入defination功能的雏形
 - object和array类型增加编辑功能
 - 完善预览生成的表单功能
 
@@ -148,7 +151,6 @@
 - Number、Array、Object类型加入UI选择和输入
 - 增加创建根目录为非object类型的jsonschema(string|number|boolean|array),此功能会覆盖global的object
 - 当根目录为数组时，完善添加元素的方法
-- 加入defination功能的雏形
 
 ### 2018-01-24
 

@@ -33,6 +33,7 @@ class ArraySchemaCreator extends React.Component {
     asFixedItems: false,
     coverFixedItems: false,
     ownerList: [],
+    uniqueItemsStatus: false,
     arraySchema: {
       key: '',
       title: '',
@@ -167,6 +168,7 @@ class ArraySchemaCreator extends React.Component {
       ownerTypeStatus: 'object',
       asFixedItems: false,
       coverFixedItems: false,
+      uniqueItemsStatus: false,
       arraySchema: {
         key: '',
         title: '',
@@ -320,6 +322,24 @@ class ArraySchemaCreator extends React.Component {
     this.setState({
       coverFixedItems: checked,
       asFixedItems: false,
+    });
+  }
+
+  uniqueItemsStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      let data = {
+        ...prevState.arraySchema
+      };
+      if (!checked) {
+        delete data.uniqueItems;
+      } else {
+        data.uniqueItems = checked;
+      }
+      return {
+        arraySchema: data,
+        uniqueItemsStatus: checked
+      }
     });
   }
 
@@ -499,6 +519,10 @@ class ArraySchemaCreator extends React.Component {
 
         <FormItem label="default">
           <TextArea value={ this.state.arraySchema.default.join(',') } onInput={ this.defaultInput }></TextArea>
+        </FormItem>
+
+        <FormItem label="uniqueItems">
+          <Checkbox checked={ this.state.uniqueItemsStatus } onChange={ this.uniqueItemsStatusChange }>成员唯一（成员只有一个）</Checkbox>
         </FormItem>
 
         <FormItem label="设置ui">

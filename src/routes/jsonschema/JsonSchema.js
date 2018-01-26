@@ -361,7 +361,7 @@ class JsonSchema extends React.Component {
       if (this.state.JSONSchema.type === 'object') {
         data.JSONSchema.properties = useProperties;
       } else if (this.state.JSONSchema.type === 'array') {
-        data.JSONSchema.items = useProperties;
+        data.JSONSchema = Object.assign(data.JSONSchema, useProperties);
       }
       data.UISchema = {
         ...prevState.UISchema,
