@@ -443,6 +443,28 @@ class JsonSchema extends React.Component {
 
     let defOwner = newDefinition.defOwner;
     let defOwnerList = defOwner.split('~/~');
+    console.log('defOwnerList', defOwnerList);
+
+    let useDefObj = cloneDeep(this.state.JSONSchema);
+    let tmpDefObj = useDefObj;
+
+    for (let item of defOwnerList) {
+      tmpDefObj[item] || (tmpDefObj[item] = {});
+      tmpDefObj = tmpDefObj[item];
+    }
+    if (defOwnerList[defOwnerList.length - 1] !== 'definitions') {
+      tmpDefObj['definitions'] = {};
+      tmpDefObj = tmpDefObj['definitions'];
+    }
+    tmpDefObj[newDefinition.key] = newDefinition;
+    console.log('useDefObj', useDefObj);
+    this.setState((prevState, props) => {
+      return {
+        JSONSchema: {
+          ...useDefObj
+        }
+      };
+    });
   }
 
   // * ------------

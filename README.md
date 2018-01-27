@@ -139,14 +139,15 @@
 
 ### 2018-01-27
 
-- object和array类型增加编辑功能
+- 完善创建为definitions的功能
+- 调整添加property的方法，增加对应使用$ref的情况
 - 完善预览生成的表单功能
 
 ### 2018-01-26
 
 - 修复添加元素的方法在根目录类型为array的一个bug
 - Array类型增加uniqueItems选项
-- 增加获取defination列表的功能
+- 增加获取definations列表的功能
 
 ### 2018-01-25
 
