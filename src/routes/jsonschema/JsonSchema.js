@@ -178,6 +178,14 @@ class JsonSchema extends React.Component {
     return Object.prototype.toString.call(property);
   }
 
+  getRefRealPath = (refList) => {
+    let resRef = '#';
+    for (let ref of refList) {
+      resRef += '/' + ref;
+    }
+    return resRef;
+  }
+
   // * 添加新的属性
   addNewProperties = (newProperty) => {
     console.log('addNewProperties newProperty:', newProperty);
@@ -227,6 +235,7 @@ class JsonSchema extends React.Component {
     // * 非根目录的情况
     let useProperties = null;
     let tmpProperties = null;
+
     if (this.state.JSONSchema.type === 'object') {
       useProperties = cloneDeep(this.state.JSONSchema.properties);
       tmpProperties = useProperties; // * 用来定位JsonSchema具体的位置
@@ -290,15 +299,13 @@ class JsonSchema extends React.Component {
 
     // * ui相关---------------
     // * 设置ui最终位置的js类型与key名
-    if (tmpProperties.type === 'object' || ownerList.length === 1) {
-
+    if (tmpProperties.type === 'object' || (ownerList.length === 1 && ownerList[0] === '')) {
       useUISchema[newProperty.key] = {
         ...useUISchema[newProperty.key]
       };
       useUISchema = useUISchema[newProperty.key];
 
     } else if (tmpProperties.type === 'array' && newProperty.asFixedItems) {
-
       if (useUISchema['items'] && Object.keys(useUISchema['items']).length > 0) {
         useUISchema['additionalItems'] = useUISchema['items'];
       }
@@ -307,25 +314,16 @@ class JsonSchema extends React.Component {
         useUISchema['items'] = [];
       }
       useUISchema = useUISchema['items'];
-
     } else if (tmpProperties.type === 'array' && newProperty.coverFixedItems) {
-
       delete useUISchema['additionalItems'];
 
       useUISchema['items'] = {};
       useUISchema = useUISchema['items'];
-
     } else {
       let hasArray = this.getPropertyJsType(tmpProperties.items).indexOf('Array');
-
-      if (hasArray !== -1) {
-        useUISchema['additionalItems'] = {};
-        useUISchema = useUISchema['additionalItems'];
-      } else {
-        useUISchema['items'] = {};
-        useUISchema = useUISchema['items'];
-      }
-
+      let name = hasArray !== -1 ? 'additionalItems' : 'items';
+      useUISchema[name] = {};
+      useUISchema = useUISchema[name];
     }
 
     // * 将ui加入到目标位置
@@ -362,6 +360,11 @@ class JsonSchema extends React.Component {
       }
     }
     // * formData相关------------
+
+    // * 如果是使用$ref的情况，获取$ref的正式路径
+    if (newProperty.$ref) {
+      newProperty.$ref = this.getRefRealPath(newProperty.$ref.split('~/~'));
+    }
 
     // * 将新建的属性加入到目标位置
     if (

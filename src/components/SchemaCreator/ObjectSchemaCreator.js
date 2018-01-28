@@ -20,6 +20,7 @@ import {
 const FormItem = Form.Item;
 const Option = Select.Option;
 const confirm = Modal.confirm;
+const TextArea = Input.TextArea;
 
 class ObjectSchemaCreator extends React.Component {
 
@@ -32,6 +33,11 @@ class ObjectSchemaCreator extends React.Component {
     coverFixedItems: false,
     refStatus: false,
     asDefinition: false,
+    newDep: {
+      key: '',
+      value: ''
+    },
+    newDependencies: [],
     objectSchema: {
       key: '',
       title: '',
@@ -161,21 +167,6 @@ class ObjectSchemaCreator extends React.Component {
         type: 'object'
       });
       tmpDefList = this.compuDefListPure(tmpPath, item[1], tmpDefList);
-      // if (item[1].definitions) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, item[1].definitions));
-      // }
-      // if (item[1].properties) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, item[1].properties));
-      // }
-      // if (item[1].items && utilFund.getPropertyJsType(item[1].items).indexOf('Object') !== -1) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: item[1].items}));
-      // }
-      // if (item[1].items && utilFund.getPropertyJsType(item[1].items).indexOf('Array') !== -1 && item[1].items.length > 0) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, item[1].items));
-      // }
-      // if (item[1].additionalItems && utilFund.getPropertyJsType(item[1].additionalItems).indexOf('Object') !== -1) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: item[1].additionalItems}));
-      // }
     }
     return tmpDefList;
   }
@@ -192,22 +183,6 @@ class ObjectSchemaCreator extends React.Component {
       type: 'object'
     });
     tmpDefList = this.compuDefListPure(tmpPath, param.item, tmpDefList);
-    // let tmpItem = param.item;
-    // if (tmpItem.definitions) {
-    //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
-    // }
-    // if (tmpItem.properties) {
-    //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
-    // }
-    // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
-    //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
-    // }
-    // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
-    //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
-    // }
-    // if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
-    //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
-    // }
     return tmpDefList;
   }
 
@@ -225,23 +200,6 @@ class ObjectSchemaCreator extends React.Component {
       });
       console.log('item[i]', item[i]);
       tmpDefList = this.compuDefListPure(tmpPath, item[i], tmpDefList);
-      console.log('tmpDefList', tmpDefList);
-      // let tmpItem = item[i];
-      // if (tmpItem.definitions) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
-      // }
-      // if (tmpItem.properties) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
-      // }
-      // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
-      // }
-      // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
-      // }
-      // if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
-      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
-      // }
     }
     return tmpDefList;
   }
@@ -289,6 +247,11 @@ class ObjectSchemaCreator extends React.Component {
       coverFixedItems: false,
       refStatus: false,
       asDefinition: false,
+      newDep: {
+        key: '',
+        value: ''
+      },
+      newDependencies: [],
       objectSchema: {
         key: '',
         title: '',
@@ -327,6 +290,16 @@ class ObjectSchemaCreator extends React.Component {
       data.coverFixedItems = true;
     }
 
+    // * 判断是否应该加入依赖
+    if (this.state.newDependencies.length > 0) {
+      data.dependencies = {
+        ...data.dependencies
+      }
+      for (let item of this.state.newDependencies) {
+        data.dependencies[item.key] = [...item.value];
+      }
+    }
+
     if (this.state.asDefinition) {
       delete data.$ref;
       this.props.addNewDefinition(data);
@@ -337,7 +310,7 @@ class ObjectSchemaCreator extends React.Component {
         key: data.key,
         refStatus: true
       }
-      this.props.addNewProperties(tmpData);
+      tmpData.$ref && this.props.addNewProperties(tmpData);
     } else {
       delete data.$ref;
       // * 如果有设置ui，则将ui添加到UISchema
@@ -377,9 +350,9 @@ class ObjectSchemaCreator extends React.Component {
       return {
         objectSchema: {
           ...prevState.objectSchema,
-          owner: prevState.ownerList[value].path
+          owner: value !== undefined ? prevState.ownerList[value].path : ''
         },
-        ownerTypeStatus: prevState.ownerList[value].type
+        ownerTypeStatus: value !== undefined ? prevState.ownerList[value].type : ''
       };
     });
   }
@@ -456,6 +429,50 @@ class ObjectSchemaCreator extends React.Component {
     });
   }
 
+  dependenciesInput = (event, name) => {
+    if (event === undefined) {
+      return;
+    }
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      return {
+        newDep: {
+          ...prevState.newDep,
+          [name]: tmpValue
+        }
+      };
+    })
+  }
+
+  deleteDep = (key) => {
+    let len = this.state.newDependencies.length;
+    let data = [];
+    for (let i = 0; i < len; i++) {
+      if (this.state.newDependencies[i].key !== key) {
+        data.push(this.state.newDependencies[i]);
+      }
+    }
+    this.setState((prevState, props) => {
+      return {
+        newDependencies: data
+      }
+    });
+  }
+
+  addDep = () => {
+    this.setState((prevState, props) => {
+      return {
+        newDependencies: [
+          ...prevState.newDependencies,
+          {
+            key: prevState.newDep.key,
+            value: prevState.newDep.value.split(',')
+          }
+        ]
+      }
+    })
+  }
+
   // * ------------
 
   asFixedItemsStatusChange = (event) => {
@@ -477,6 +494,7 @@ class ObjectSchemaCreator extends React.Component {
   // * ------------
 
   render () {
+    console.log('render');
     return (
       <Form>
 
@@ -571,8 +589,48 @@ class ObjectSchemaCreator extends React.Component {
             </FormItem>
 
             <FormItem label="required">
-              <Input value={ this.state.objectSchema.required.join(',') } onInput={ this.requiredInput }></Input>
+              <Input value={ this.state.objectSchema.required ? this.state.objectSchema.required.join(',') : '' } onInput={ this.requiredInput }></Input>
             </FormItem>
+
+            <FormItem label="properties dependencies">
+              <div>
+              <div>
+                  <span>依赖对象</span>
+                  <Input value={ this.state.newDep.key } onChange={ (e) => {
+                    this.dependenciesInput(e, 'key')
+                  } }></Input>
+                </div>
+                <div>
+                  <span>被依赖对象</span>
+                  <TextArea value={ this.state.newDep.value } onChange={ (e) => {
+                    this.dependenciesInput(e, 'value');
+                  } }></TextArea>
+                </div>
+                <Button type="primary" onClick={ this.addDep }>添加</Button>
+              </div>
+              {
+                this.state.newDependencies.map((ele, index, arr) => {
+                  return (
+                    <div key={ ele.key + ele.vlaue + index } className="flex-lfix mg-top-middle">
+                      <Button type="danger" onClick={ () => {
+                        this.deleteDep(ele.key);
+                      } }>删除</Button>
+                      <div style={ {
+                        marginLeft: '24px',
+                        lineHeight: '32px'
+                      } }>
+                        <span style={ {
+                          color: 'red'
+                        } }>{ ele.key + ': '}</span>
+                        <span>{ ele.value.join(',') }</span>
+                      </div>
+                    </div>
+                  )
+                })
+              }
+            </FormItem>
+
+            <FormItem label="schema dependencies"></FormItem>
 
             <FormItem label="设置ui">
               <div className="nested-form-item">

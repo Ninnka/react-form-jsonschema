@@ -41,6 +41,11 @@ class ArraySchemaCreator extends React.Component {
     defList: [],
     refList: [],
     uniqueItemsStatus: false,
+    newDep: {
+      key: '',
+      value: ''
+    },
+    newDependencies: [],
     arraySchema: {
       key: '',
       title: '',
@@ -318,6 +323,11 @@ class ArraySchemaCreator extends React.Component {
       refStatus: false,
       asDefinition: false,
       uniqueItemsStatus: false,
+      newDep: {
+        key: '',
+        value: ''
+      },
+      newDependencies: [],
       arraySchema: {
         key: '',
         title: '',
@@ -348,7 +358,7 @@ class ArraySchemaCreator extends React.Component {
     if (!this.state.arraySchema.key) {
       return;
     }
-    if (this.state.arraySchema.owner) {
+    if (this.state.arraySchema.owner || this.state.asDefinition) {
       this.submitForm();
     } else {
       this.showConfirm();
@@ -366,16 +376,42 @@ class ArraySchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    if (Object.keys(this.uiCreator.state.ui).length > 0) {
-      data.ui = this.uiCreator.state.ui;
+
+    // * 判断是否应该加入依赖
+    if (this.state.newDependencies.length > 0) {
+      data.dependencies = {
+        ...data.dependencies
+      }
+      for (let item of this.state.newDependencies) {
+        data.dependencies[item.key] = [...item.value];
+      }
     }
-    if (Object.keys(this.uiCreator.state.uiOptions).length > 0) {
-      data.ui = {
-        ...data.ui
-      };
-      data.ui['options'] = this.uiCreator.state.uiOptions;
+
+    if (this.state.asDefinition) {
+      delete data.$ref;
+      this.props.addNewDefinition(data);
+    } else if (this.state.refStatus) {
+      let tmpData= {
+        owner: data.owner,
+        $ref: data.$ref,
+        key: data.key,
+        refStatus: true
+      }
+      tmpData.$ref && this.props.addNewProperties(tmpData);
+    } else {
+      delete data.$ref;
+      // * 如果有设置ui，则将ui添加到UISchema
+      if (Object.keys(this.uiCreator.state.ui).length > 0) {
+        data.ui = this.uiCreator.state.ui;
+      }
+      if (Object.keys(this.uiCreator.state.uiOptions).length > 0) {
+        data.ui = {
+          ...data.ui
+        };
+        data.ui['options'] = this.uiCreator.state.uiOptions;
+      }
+      this.props.addNewProperties(data);
     }
-    this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
 
@@ -387,9 +423,9 @@ class ArraySchemaCreator extends React.Component {
       return {
         arraySchema: {
           ...prevState.arraySchema,
-          owner: prevState.ownerList[value].path
+          owner: value !== undefined ? prevState.ownerList[value].path : ''
         },
-        ownerTypeStatus: prevState.ownerList[value].type
+        ownerTypeStatus: value !== undefined ? prevState.ownerList[value].type : ''
       };
     });
   }
@@ -503,6 +539,16 @@ class ArraySchemaCreator extends React.Component {
     });
   }
 
+  defStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      return {
+        asDefinition: checked,
+        refStatus: false
+      };
+    });
+  }
+
   // * 选择的definition引用路径变化时
   refChange = (value) => {
     this.setState((prevState, props) => {
@@ -519,12 +565,56 @@ class ArraySchemaCreator extends React.Component {
   defOwnerChange = (value) => {
     this.setState((prevState, props) => {
       return {
-        objectSchema: {
-          ...prevState.objectSchema,
+        arraySchema: {
+          ...prevState.arraySchema,
           defOwner: prevState.defList[value].path
         }
       };
     });
+  }
+
+  dependenciesInput = (event, name) => {
+    if (event === undefined) {
+      return;
+    }
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      return {
+        newDep: {
+          ...prevState.newDep,
+          [name]: tmpValue
+        }
+      };
+    })
+  }
+
+  deleteDep = (key) => {
+    let len = this.state.newDependencies.length;
+    let data = [];
+    for (let i = 0; i < len; i++) {
+      if (this.state.newDependencies[i].key !== key) {
+        data.push(this.state.newDependencies[i]);
+      }
+    }
+    this.setState((prevState, props) => {
+      return {
+        newDependencies: data
+      }
+    });
+  }
+
+  addDep = () => {
+    this.setState((prevState, props) => {
+      return {
+        newDependencies: [
+          ...prevState.newDependencies,
+          {
+            key: prevState.newDep.key,
+            value: prevState.newDep.value.split(',')
+          }
+        ]
+      }
+    })
   }
 
   // * ------------
@@ -685,7 +775,7 @@ class ArraySchemaCreator extends React.Component {
 
         { !this.state.asDefinition &&
           <FormItem label="选择所属对象">
-            <Select value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
+            <Select allowClear value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
               {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (
@@ -754,6 +844,46 @@ class ArraySchemaCreator extends React.Component {
             <FormItem label="uniqueItems">
               <Checkbox checked={ this.state.uniqueItemsStatus } onChange={ this.uniqueItemsStatusChange }>成员唯一（成员只有一个）</Checkbox>
             </FormItem>
+
+            <FormItem label="properties dependencies">
+              <div>
+                <div>
+                  <span>依赖对象</span>
+                  <Input value={ this.state.newDep.key } onChange={ (e) => {
+                    this.dependenciesInput(e, 'key')
+                  } }></Input>
+                </div>
+                <div>
+                  <span>被依赖对象</span>
+                  <TextArea value={ this.state.newDep.value } onChange={ (e) => {
+                    this.dependenciesInput(e, 'value');
+                  } }></TextArea>
+                </div>
+                <Button type="primary" onClick={ this.addDep }>添加</Button>
+              </div>
+              {
+                this.state.newDependencies.map((ele, index, arr) => {
+                  return (
+                    <div key={ ele.key + ele.vlaue + index } className="flex-lfix mg-top-middle">
+                      <Button type="danger" onClick={ () => {
+                        this.deleteDep(ele.key);
+                      } }>删除</Button>
+                      <div style={ {
+                        marginLeft: '24px',
+                        lineHeight: '32px'
+                      } }>
+                        <span style={ {
+                          color: 'red'
+                        } }>{ ele.key + ': '}</span>
+                        <span>{ ele.value.join(',') }</span>
+                      </div>
+                    </div>
+                  )
+                })
+              }
+            </FormItem>
+
+            <FormItem label="schema dependencies"></FormItem>
 
             <FormItem label="设置ui">
               <div className="nested-form-item">
