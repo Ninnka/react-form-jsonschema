@@ -25,6 +25,7 @@ class BooleanSchemaCreator extends React.Component {
     ownerTypeStatus: 'object',
     asFixedItems: false,
     coverFixedItems: false,
+    asDefinition: false,
     booleanSchema: {
       key: '',
       title: '',
@@ -47,7 +48,6 @@ class BooleanSchemaCreator extends React.Component {
     this.setState({
       ownerList: tmpOwnerList
     });
-
   }
 
   componentDidMount () {
@@ -129,6 +129,8 @@ class BooleanSchemaCreator extends React.Component {
       ownerTypeStatus: 'object',
       asFixedItems: false,
       coverFixedItems: false,
+      asDefinition: false,
+      asCreateDefinition: false,
       booleanSchema: {
         key: '',
         title: '',
@@ -146,6 +148,7 @@ class BooleanSchemaCreator extends React.Component {
     console.log('confirmForm');
     let data = {
       ...this.state.booleanSchema,
+      asDefinition: this.state.asDefinition,
       type: 'boolean'
     };
     if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
@@ -156,6 +159,7 @@ class BooleanSchemaCreator extends React.Component {
     if (Object.keys(this.UIschema.state.ui).length > 0) {
       data.ui = this.UIschema.state.ui;
     }
+    console.log(this.state.ownerList);
     this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
@@ -272,69 +276,135 @@ class BooleanSchemaCreator extends React.Component {
     });
   }
 
+  asDefinitionStatusChange = (e) => {
+    let checked = e.target.checked;
+    if (!checked) {
+      this.setState({
+        asDefinition: checked,
+      })
+    } else {
+      this.setState({
+        asDefinition: checked,
+        asCreateDefinition: !checked
+      })
+    }
+    
+  }
+
+  asCreateDefinitionStatusChange = (e) => {
+    let checked = e.target.checked;
+    if (!checked) {
+      this.setState({
+        asCreateDefinition: checked,
+      })
+    } else {
+      this.setState({
+        asCreateDefinition: checked,
+        asDefinition: !checked
+      })      
+    }
+  }
+
   // * ------------
 
   render () {
     return (
       <Form>
-        <FormItem label="选择所属对象">
-          <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange }>
+        <FormItem>
+          <Checkbox checked={this.state.asDefinition} onChange={this.asDefinitionStatusChange}>设置ref</Checkbox>
+        </FormItem>
+        <FormItem>
+          <Checkbox checked={this.state.asCreateDefinition} onChange={this.asCreateDefinitionStatusChange}>创建Definition</Checkbox>
+        </FormItem>
+        {
+          this.state.asDefinition &&
+          <FormItem label="选择definition" className="nested-form-item">
+            <Select defaultValue="lucy">
+              <Option value="jack">Jack</Option>
+              <Option value="lucy">Lucy</Option>
+              <Option value="disabled" disabled>Disabled</Option>
+              <Option value="Yiminghe">yiminghe</Option>
+            </Select>
+          </FormItem>
+        }
+        {
+          this.state.asCreateDefinition && 
+          <FormItem label="选择所属definition" className="nested-form-item">
+            <Select defaultValue="lucy">
+              <Option value="jack">Jack</Option>
+              <Option value="lucy">Lucy</Option>
+              <Option value="disabled" disabled>Disabled</Option>
+              <Option value="Yiminghe">yiminghe</Option>
+            </Select>
+          </FormItem>
+        }
+        {
+          !this.state.asDefinition && 
+          <>
             {
-              this.state.ownerList.map((ele, index, arr) => {
-                return (
-                  <Option key={ ele.path + index } value={ index }>
-                    <div style={ {
-                      position: 'relative'
-                    } }>
-                      <span style={ {
-                        position: 'absolute',
-                        top: '0',
-                        left: '0'
-                      } }>{ ele.type + ' : ' }</span>
-                      <span style={ {
-                        marginLeft: '70px'
-                      } }>{ ele.path }</span>
-                    </div>
-                  </Option>
-                )
-              })
+              !this.state.asCreateDefinition &&
+              <FormItem label="选择所属对象">
+                <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange }>
+                  {
+                    this.state.ownerList.map((ele, index, arr) => {
+                      return (
+                        <Option key={ ele.path + index } value={ index }>
+                          <div style={ {
+                            position: 'relative'
+                          } }>
+                            <span style={ {
+                              position: 'absolute',
+                              top: '0',
+                              left: '0'
+                            } }>{ ele.type + ' : ' }</span>
+                            <span style={ {
+                              marginLeft: '70px'
+                            } }>{ ele.path }</span>
+                          </div>
+                        </Option>
+                      )
+                    })
+                  }
+                </Select>
+                { this.state.ownerTypeStatus === 'array' &&
+                  <div>
+                    <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
+                    <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
+                    <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
+                  </div>
+                }
+              </FormItem>
             }
-          </Select>
-          { this.state.ownerTypeStatus === 'array' &&
-            <div>
-              <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
-              <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
-              <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
-            </div>
-          }
-        </FormItem>
+            <FormItem label="key">
+              <Input value={ this.state.booleanSchema.key } onInput={ this.keyInput }></Input>
+            </FormItem>
 
-        <FormItem label="key">
-          <Input value={ this.state.booleanSchema.key } onInput={ this.keyInput }></Input>
-        </FormItem>
+            <FormItem label="title">
+              <Input value={ this.state.booleanSchema.title } onInput={ this.titleInput }></Input>
+            </FormItem>
 
-        <FormItem label="title">
-          <Input value={ this.state.booleanSchema.title } onInput={ this.titleInput }></Input>
-        </FormItem>
+            <FormItem label="description">
+              <Input value={ this.state.booleanSchema.description } onInput={ this.descriptionInput }></Input>
+            </FormItem>
 
-        <FormItem label="description">
-          <Input value={ this.state.booleanSchema.description } onInput={ this.descriptionInput }></Input>
-        </FormItem>
-
-        <FormItem label="default">
-          <Select value={ this.state.booleanSchema.default.toString() } onChange={ this.defaultInput }>
-            <Option value="true">true</Option>
-            <Option value="false">false</Option>
-          </Select>
-        </FormItem>
-
-        <FormItem label="设置ui：">
-          <div className="nested-form-item">
-            <UISchema ref={ (ui) => {
-              this.UIschema = ui;
-            }}/>
-          </div>
-        </FormItem>
+            <FormItem label="default">
+              <Select value={ this.state.booleanSchema.default.toString() } onChange={ this.defaultInput }>
+                <Option value="true">true</Option>
+                <Option value="false">false</Option>
+              </Select>
+            </FormItem>
+            {
+              !this.state.asCreateDefinition &&
+              <FormItem label="设置ui：">
+                <div className="nested-form-item">
+                  <UISchema ref={ (ui) => {
+                    this.UIschema = ui;
+                  }}/>
+                </div>
+              </FormItem>
+            }
+          </>
+        }
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
           <Button type="primary" onClick={ this.handleConfirm }>确认</Button>
