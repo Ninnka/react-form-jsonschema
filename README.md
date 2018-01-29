@@ -114,18 +114,19 @@
         - removeable
       - ui:disabled
       - ui:readonly
-- 已下特性未支持
-  - Schema definitions and references（未来支持）
-  - Custom widget components（未来支持）
-  - Custom CSS class names（未来支持）
-  - Custom labels for enum fields（未来支持）
-  - HTML5 Input Types（未来支持）
-  - Id prefix（未来支持）
-  - Custom validation（未来支持）
-  - Custom error messages（未来支持）
+  - Schema definitions and references
   - Property dependency
   - schema dependency
-  - Advanced customization (编程式)
+  - HTML5 Input Types
+  - Custom labels for enum fields
+  - Custom CSS class names
+  - Id prefix
+
+- 已下特性未支持
+  - Custom widget components（未来支持）
+  - Custom validation（未来支持）
+  - Custom error messages（未来支持）
+  - Advanced customization (不支持)
     - Field template
     - Array Field Template
     - Object Field Template
@@ -137,10 +138,31 @@
 
 ## Update Log
 
+### 2018-01-29
+
+- 新增HTML5 Input Types功能
+- 新增Custom labels for enum fields功能
+- 新增Custom CSS class names功能
+- 新增Id prefix功能
+
+### 2018-01-28
+
+- 新增property dependency和schema dependency功能
+- 数组类型schema构造表单的选择所属对象增加清空功能
+- 修复已知问题(根目录为数组且指定位置为根目录时，添加的ui位置错误；清空所属对象时错误的bug)
+- 删除无用的注释
+
+### 2018-01-27
+
+- 完善创建为definitions的功能
+- 调整添加property的方法，增加对应使用$ref的情况
+- 完善预览生成的表单功能
+
 ### 2018-01-26
 
-- object和array类型增加编辑功能
-- 完善预览生成的表单功能
+- 修复添加元素的方法在根目录类型为array的一个bug
+- Array类型增加uniqueItems选项
+- 增加获取definations列表的功能
 
 ### 2018-01-25
 

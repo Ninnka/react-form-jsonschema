@@ -5,6 +5,9 @@ import React from 'react';
 
 import ArrayUICreator from '@components/SchemaCreator/UICreator/ArrayUICreator';
 
+// * 功能库
+import utilFund from '@utils/functions';
+
 import { cloneDeep } from 'lodash';
 
 // * antd组件
@@ -32,14 +35,25 @@ class ArraySchemaCreator extends React.Component {
     ownerTypeStatus: 'object',
     asFixedItems: false,
     coverFixedItems: false,
+    refStatus: false,
+    asDefinition: false,
     ownerList: [],
+    defList: [],
+    refList: [],
+    uniqueItemsStatus: false,
+    newDep: {
+      key: '',
+      value: ''
+    },
+    newDependencies: [],
     arraySchema: {
       key: '',
       title: '',
       description: '',
       default: [],
       owner: '',
-      ui: ''
+      defOwner: 'definitions',
+      $ref: ''
     },
     additionalItems: {},
     fixedItemsList: [],
@@ -63,31 +77,40 @@ class ArraySchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
-    let tmpOwnerList = [];
-    if (nextProps.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
-    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
-    }
-    this.setState({
-      ownerList: tmpOwnerList
-    });
+    this.compuListPrepare(nextProps);
   }
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
-    let tmpOwnerList = [];
-    if (this.props.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
-    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
-    }
-    this.setState({
-      ownerList: tmpOwnerList
-    });
+    this.compuListPrepare(this.props);
   }
 
   // * ------------
+
+  compuListPrepare = (props) => {
+    let tmpOwnerList = [];
+    if (props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', props.properties));
+    } else if (props.jsonSchema && props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', props.jsonSchema]);
+    }
+    let tmpDefList = [];
+    if (props.definitions) {
+      tmpDefList = this.compuDefList('', props.definitions);
+    }
+    let tmpRefList = [];
+    for (let index = 0; index < tmpDefList.length; index++) {
+      let tmpList = tmpDefList[index].path.split('~/~');
+      if (tmpList.length > 0 && tmpList[tmpList.length - 1] !== 'definitions') {
+        tmpRefList.push(tmpDefList[index]);
+      }
+    }
+    this.setState({
+      ownerList: tmpOwnerList,
+      defList: tmpDefList,
+      refList: tmpRefList
+    });
+  }
 
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
@@ -148,6 +171,136 @@ class ArraySchemaCreator extends React.Component {
 
   // * ------------
 
+  compuDefList = (path, item) => {
+    // console.log('compuDefList');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    tmpDefList.push({
+      path: prePath,
+      type: 'object'
+    });
+
+    let defEntriesList = Object.entries(item);
+    // console.log('defEntriesList', defEntriesList);
+
+    for (let item of defEntriesList) {
+      let tmpPath = prePath + '~/~' + item[0];
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      tmpDefList = this.compuDefListPure(tmpPath, item[1], tmpDefList);
+      // if (item[1].definitions) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, item[1].definitions));
+      // }
+      // if (item[1].properties) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, item[1].properties));
+      // }
+      // if (item[1].items && utilFund.getPropertyJsType(item[1].items).indexOf('Object') !== -1) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: item[1].items}));
+      // }
+      // if (item[1].items && utilFund.getPropertyJsType(item[1].items).indexOf('Array') !== -1 && item[1].items.length > 0) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, item[1].items));
+      // }
+      // if (item[1].additionalItems && utilFund.getPropertyJsType(item[1].additionalItems).indexOf('Object') !== -1) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: item[1].additionalItems}));
+      // }
+    }
+    return tmpDefList;
+  }
+
+  compuDefListObj = (path, param) => {
+    console.log('compuDefListObj');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    let tmpPath = prePath + '~/~' + param.key;
+    console.log('tmpPath', tmpPath);
+    tmpDefList.push({
+      path: tmpPath,
+      type: 'object'
+    });
+    tmpDefList = this.compuDefListPure(tmpPath, param.item, tmpDefList);
+    // let tmpItem = param.item;
+    // if (tmpItem.definitions) {
+    //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
+    // }
+    // if (tmpItem.properties) {
+    //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
+    // }
+    // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+    //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
+    // }
+    // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+    //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
+    // }
+    // if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+    //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
+    // }
+    return tmpDefList;
+  }
+
+  compuDefListArray = (path, item) => {
+    console.log('compuDefListArray');
+    let tmpDefList = [];
+
+    let prePath = path + '~/~items';
+    let len = item.length;
+    for (let i = 0; i < len; i++) {
+      let tmpPath = prePath + '~/~' + i;
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      console.log('item[i]', item[i]);
+      tmpDefList = this.compuDefListPure(tmpPath, item[i], tmpDefList);
+      console.log('tmpDefList', tmpDefList);
+      // let tmpItem = item[i];
+      // if (tmpItem.definitions) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
+      // }
+      // if (tmpItem.properties) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
+      // }
+      // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
+      // }
+      // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
+      // }
+      // if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+      //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
+      // }
+    }
+    return tmpDefList;
+  }
+
+  compuDefListPure = (path, item, list) => {
+    let tmpDefList = list;
+    let tmpPath = path;
+    let tmpItem = item;
+
+    if (tmpItem.definitions) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
+    }
+    if (tmpItem.properties && Object.keys(tmpItem.properties).length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
+    }
+    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
+    }
+    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
+    }
+    if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
+    }
+    return tmpDefList;
+  }
+
+  // * ------------
+
   showConfirm = () => {
     confirm({
       title: '提示',
@@ -167,13 +320,22 @@ class ArraySchemaCreator extends React.Component {
       ownerTypeStatus: 'object',
       asFixedItems: false,
       coverFixedItems: false,
+      refStatus: false,
+      asDefinition: false,
+      uniqueItemsStatus: false,
+      newDep: {
+        key: '',
+        value: ''
+      },
+      newDependencies: [],
       arraySchema: {
         key: '',
         title: '',
         description: '',
         default: [],
         owner: '',
-        ui: ''
+        defOwner: 'definitions',
+        $ref: ''
       },
       additionalItems: {},
       fixedItemsList: [],
@@ -196,7 +358,7 @@ class ArraySchemaCreator extends React.Component {
     if (!this.state.arraySchema.key) {
       return;
     }
-    if (this.state.arraySchema.owner) {
+    if (this.state.arraySchema.owner || this.state.asDefinition) {
       this.submitForm();
     } else {
       this.showConfirm();
@@ -214,16 +376,42 @@ class ArraySchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    if (Object.keys(this.uiCreator.state.ui).length > 0) {
-      data.ui = this.uiCreator.state.ui;
+
+    // * 判断是否应该加入依赖
+    if (this.state.newDependencies.length > 0) {
+      data.dependencies = {
+        ...data.dependencies
+      }
+      for (let item of this.state.newDependencies) {
+        data.dependencies[item.key] = [...item.value];
+      }
     }
-    if (Object.keys(this.uiCreator.state.uiOptions).length > 0) {
-      data.ui = {
-        ...data.ui
-      };
-      data.ui['options'] = this.uiCreator.state.uiOptions;
+
+    if (this.state.asDefinition) {
+      delete data.$ref;
+      this.props.addNewDefinition(data);
+    } else if (this.state.refStatus) {
+      let tmpData= {
+        owner: data.owner,
+        $ref: data.$ref,
+        key: data.key,
+        refStatus: true
+      }
+      tmpData.$ref && this.props.addNewProperties(tmpData);
+    } else {
+      delete data.$ref;
+      // * 如果有设置ui，则将ui添加到UISchema
+      if (Object.keys(this.uiCreator.state.ui).length > 0) {
+        data.ui = this.uiCreator.state.ui;
+      }
+      if (Object.keys(this.uiCreator.state.uiOptions).length > 0) {
+        data.ui = {
+          ...data.ui
+        };
+        data.ui['options'] = this.uiCreator.state.uiOptions;
+      }
+      this.props.addNewProperties(data);
     }
-    this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
 
@@ -235,9 +423,9 @@ class ArraySchemaCreator extends React.Component {
       return {
         arraySchema: {
           ...prevState.arraySchema,
-          owner: prevState.ownerList[value].path
+          owner: value !== undefined ? prevState.ownerList[value].path : ''
         },
-        ownerTypeStatus: prevState.ownerList[value].type
+        ownerTypeStatus: value !== undefined ? prevState.ownerList[value].type : ''
       };
     });
   }
@@ -321,6 +509,112 @@ class ArraySchemaCreator extends React.Component {
       coverFixedItems: checked,
       asFixedItems: false,
     });
+  }
+
+  uniqueItemsStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      let data = {
+        ...prevState.arraySchema
+      };
+      if (!checked) {
+        delete data.uniqueItems;
+      } else {
+        data.uniqueItems = checked;
+      }
+      return {
+        arraySchema: data,
+        uniqueItemsStatus: checked
+      }
+    });
+  }
+
+  refStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      return {
+        refStatus: checked,
+        asDefinition: false
+      };
+    });
+  }
+
+  defStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      return {
+        asDefinition: checked,
+        refStatus: false
+      };
+    });
+  }
+
+  // * 选择的definition引用路径变化时
+  refChange = (value) => {
+    this.setState((prevState, props) => {
+      return {
+        arraySchema: {
+          ...prevState.arraySchema,
+          $ref: prevState.refList[value].path
+        }
+      };
+    });
+  }
+
+  // * 选择的definition创建位置路径变化时
+  defOwnerChange = (value) => {
+    this.setState((prevState, props) => {
+      return {
+        arraySchema: {
+          ...prevState.arraySchema,
+          defOwner: prevState.defList[value].path
+        }
+      };
+    });
+  }
+
+  dependenciesInput = (event, name) => {
+    if (event === undefined) {
+      return;
+    }
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      return {
+        newDep: {
+          ...prevState.newDep,
+          [name]: tmpValue
+        }
+      };
+    })
+  }
+
+  deleteDep = (key) => {
+    let len = this.state.newDependencies.length;
+    let data = [];
+    for (let i = 0; i < len; i++) {
+      if (this.state.newDependencies[i].key !== key) {
+        data.push(this.state.newDependencies[i]);
+      }
+    }
+    this.setState((prevState, props) => {
+      return {
+        newDependencies: data
+      }
+    });
+  }
+
+  addDep = () => {
+    this.setState((prevState, props) => {
+      return {
+        newDependencies: [
+          ...prevState.newDependencies,
+          {
+            key: prevState.newDep.key,
+            value: prevState.newDep.value.split(',')
+          }
+        ]
+      }
+    })
   }
 
   // * ------------
@@ -453,35 +747,25 @@ class ArraySchemaCreator extends React.Component {
   render () {
     return (
       <Form>
-        <FormItem label="选择所属对象">
-          <Select value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
-            {
-              this.state.ownerList.map((ele, index, arr) => {
-                return (
-                  <Option key={ ele.path + index } value={ index }>
-                    <div style={ {
-                      position: 'relative'
-                    } }>
-                      <span style={ {
-                        position: 'absolute',
-                        top: '0',
-                        left: '0'
-                      } }>{ ele.type + ' : ' }</span>
-                      <span style={ {
-                        marginLeft: '70px'
-                      } }>{ ele.path }</span>
-                    </div>
-                  </Option>
-                )
-              })
-            }
-          </Select>
-          { this.state.ownerTypeStatus === 'array' &&
-            <div>
-              <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
-              <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
-              <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
-            </div>
+
+        <FormItem label="$ref">
+          <Checkbox checked={this.state.refStatus} onChange={
+            this.refStatusChange
+          }>
+            引用definition
+          </Checkbox>
+          { this.state.refStatus &&
+            <Select allowClear value={ this.state.arraySchema.$ref } onChange={ this.refChange }>
+              {
+                this.state.refList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      { ele.path }
+                    </Option>
+                  )
+                })
+              }
+            </Select>
           }
         </FormItem>
 
@@ -489,27 +773,129 @@ class ArraySchemaCreator extends React.Component {
           <Input value={ this.state.arraySchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
 
-        <FormItem label="title">
-          <Input value={ this.state.arraySchema.title } onInput={ this.titleInput }></Input>
-        </FormItem>
-
-        <FormItem label="description">
-          <Input value={ this.state.arraySchema.description } onInput={ this.descriptionInput }></Input>
-        </FormItem>
-
-        <FormItem label="default">
-          <TextArea value={ this.state.arraySchema.default.join(',') } onInput={ this.defaultInput }></TextArea>
-        </FormItem>
-
-        <FormItem label="设置ui">
-          <div className="nested-form-item">
-            <ArrayUICreator ref={
-              (uiCreator) => {
-                this.uiCreator = uiCreator;
+        { !this.state.asDefinition &&
+          <FormItem label="选择所属对象">
+            <Select allowClear value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
+              {
+                this.state.ownerList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      <div style={ {
+                        position: 'relative'
+                      } }>
+                        <span style={ {
+                          position: 'absolute',
+                          top: '0',
+                          left: '0'
+                        } }>{ ele.type + ' : ' }</span>
+                        <span style={ {
+                          marginLeft: '70px'
+                        } }>{ ele.path }</span>
+                      </div>
+                    </Option>
+                  )
+                })
               }
-            }></ArrayUICreator>
+            </Select>
+            { this.state.ownerTypeStatus === 'array' &&
+              <div>
+                <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
+                <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
+                <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
+              </div>
+            }
+          </FormItem>
+        }
+
+        { !this.state.refStatus &&
+          <div>
+            <FormItem label="选择创建的definition的位置">
+              <Checkbox checked={this.state.asDefinition} onChange={
+                  this.defStatusChange
+                }>
+                  创建为definition，选择definition的创建位置
+              </Checkbox>
+              { this.state.asDefinition &&
+                <Select value={ this.state.arraySchema.defOwner } onChange={ this.defOwnerChange }>
+                  {
+                    this.state.defList.map((ele, index, arr) => {
+                      return (
+                        <Option key={ ele.path + index } value={ index }>
+                          { ele.path }
+                        </Option>
+                      )
+                    })
+                  }
+                </Select>
+              }
+            </FormItem>
+            <FormItem label="title">
+              <Input value={ this.state.arraySchema.title } onInput={ this.titleInput }></Input>
+            </FormItem>
+
+            <FormItem label="description">
+              <Input value={ this.state.arraySchema.description } onInput={ this.descriptionInput }></Input>
+            </FormItem>
+
+            <FormItem label="default">
+              <TextArea value={ this.state.arraySchema.default.join(',') } onInput={ this.defaultInput }></TextArea>
+            </FormItem>
+
+            <FormItem label="uniqueItems">
+              <Checkbox checked={ this.state.uniqueItemsStatus } onChange={ this.uniqueItemsStatusChange }>成员唯一（成员只有一个）</Checkbox>
+            </FormItem>
+
+            <FormItem label="properties dependencies">
+              <div>
+                <div>
+                  <span>依赖对象</span>
+                  <Input value={ this.state.newDep.key } onChange={ (e) => {
+                    this.dependenciesInput(e, 'key')
+                  } }></Input>
+                </div>
+                <div>
+                  <span>被依赖对象</span>
+                  <TextArea value={ this.state.newDep.value } onChange={ (e) => {
+                    this.dependenciesInput(e, 'value');
+                  } }></TextArea>
+                </div>
+                <Button type="primary" onClick={ this.addDep }>添加</Button>
+              </div>
+              {
+                this.state.newDependencies.map((ele, index, arr) => {
+                  return (
+                    <div key={ ele.key + ele.vlaue + index } className="flex-lfix mg-top-middle">
+                      <Button type="danger" onClick={ () => {
+                        this.deleteDep(ele.key);
+                      } }>删除</Button>
+                      <div style={ {
+                        marginLeft: '24px',
+                        lineHeight: '32px'
+                      } }>
+                        <span style={ {
+                          color: 'red'
+                        } }>{ ele.key + ': '}</span>
+                        <span>{ ele.value.join(',') }</span>
+                      </div>
+                    </div>
+                  )
+                })
+              }
+            </FormItem>
+
+            <FormItem label="schema dependencies"></FormItem>
+
+            <FormItem label="设置ui">
+              <div className="nested-form-item">
+                <ArrayUICreator ref={
+                  (uiCreator) => {
+                    this.uiCreator = uiCreator;
+                  }
+                }></ArrayUICreator>
+              </div>
+            </FormItem>
           </div>
-        </FormItem>
+        }
 
         {
           false &&

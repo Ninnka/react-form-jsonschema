@@ -23,6 +23,62 @@ class JsonSchema extends React.Component {
 
   state = {
     JSONSchema: {
+      definitions: {
+        Thing: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              title: "Default title",
+              definitions: {
+                Hg: {
+                  type: "string",
+                  title: "nyrethy"
+                }
+              }
+            }
+          },
+          definitions: {
+            News: {
+              type: "string",
+              title: "a",
+              default: "dd"
+            },
+            Ew: {
+              type: 'array',
+              title: 'feiw',
+              items: [
+                {
+                  type: 'string',
+                  title: 'ruwe'
+                }
+              ]
+            }
+          }
+        },
+        Shing: {
+          type: "object",
+          properties: {
+            name: {
+              type: "string",
+              title: "Default title"
+            }
+          },
+          definitions: {
+            Io: {
+              type: "number",
+              title: "a",
+              default: "dd",
+              definitions: {
+                Rt: {
+                  type: "string",
+                  title: "uriqy"
+                }
+              }
+            }
+          }
+        }
+      },
       type: 'array',
       title: 'fw items',
       items: [{
@@ -38,7 +94,6 @@ class JsonSchema extends React.Component {
         title: 'bytrhjh',
         properties: {}
       }
-      // definitions: {},
       // type: 'object',
       // title: 'outer-object-title',
       // description: 'outer-object-desc',
@@ -123,6 +178,14 @@ class JsonSchema extends React.Component {
     return Object.prototype.toString.call(property);
   }
 
+  getRefRealPath = (refList) => {
+    let resRef = '#';
+    for (let ref of refList) {
+      resRef += '/' + ref;
+    }
+    return resRef;
+  }
+
   // * 添加新的属性
   addNewProperties = (newProperty) => {
     console.log('addNewProperties newProperty:', newProperty);
@@ -172,6 +235,7 @@ class JsonSchema extends React.Component {
     // * 非根目录的情况
     let useProperties = null;
     let tmpProperties = null;
+
     if (this.state.JSONSchema.type === 'object') {
       useProperties = cloneDeep(this.state.JSONSchema.properties);
       tmpProperties = useProperties; // * 用来定位JsonSchema具体的位置
@@ -235,15 +299,13 @@ class JsonSchema extends React.Component {
 
     // * ui相关---------------
     // * 设置ui最终位置的js类型与key名
-    if (tmpProperties.type === 'object' || ownerList.length === 1) {
-
+    if (tmpProperties.type === 'object' || (ownerList.length === 1 && ownerList[0] === '')) {
       useUISchema[newProperty.key] = {
         ...useUISchema[newProperty.key]
       };
       useUISchema = useUISchema[newProperty.key];
 
     } else if (tmpProperties.type === 'array' && newProperty.asFixedItems) {
-
       if (useUISchema['items'] && Object.keys(useUISchema['items']).length > 0) {
         useUISchema['additionalItems'] = useUISchema['items'];
       }
@@ -252,25 +314,16 @@ class JsonSchema extends React.Component {
         useUISchema['items'] = [];
       }
       useUISchema = useUISchema['items'];
-
     } else if (tmpProperties.type === 'array' && newProperty.coverFixedItems) {
-
       delete useUISchema['additionalItems'];
 
       useUISchema['items'] = {};
       useUISchema = useUISchema['items'];
-
     } else {
       let hasArray = this.getPropertyJsType(tmpProperties.items).indexOf('Array');
-
-      if (hasArray !== -1) {
-        useUISchema['additionalItems'] = {};
-        useUISchema = useUISchema['additionalItems'];
-      } else {
-        useUISchema['items'] = {};
-        useUISchema = useUISchema['items'];
-      }
-
+      let name = hasArray !== -1 ? 'additionalItems' : 'items';
+      useUISchema[name] = {};
+      useUISchema = useUISchema[name];
     }
 
     // * 将ui加入到目标位置
@@ -307,6 +360,11 @@ class JsonSchema extends React.Component {
       }
     }
     // * formData相关------------
+
+    // * 如果是使用$ref的情况，获取$ref的正式路径
+    if (newProperty.$ref) {
+      newProperty.$ref = this.getRefRealPath(newProperty.$ref.split('~/~'));
+    }
 
     // * 将新建的属性加入到目标位置
     if (
@@ -361,7 +419,7 @@ class JsonSchema extends React.Component {
       if (this.state.JSONSchema.type === 'object') {
         data.JSONSchema.properties = useProperties;
       } else if (this.state.JSONSchema.type === 'array') {
-        data.JSONSchema.items = useProperties;
+        data.JSONSchema = Object.assign(data.JSONSchema, useProperties);
       }
       data.UISchema = {
         ...prevState.UISchema,
@@ -378,6 +436,37 @@ class JsonSchema extends React.Component {
       this.messageSuccess({
         message: '添加成功'
       });
+    });
+  }
+
+  addNewDefinition = (newDefinition) => {
+    delete newDefinition.ui;
+
+    console.log('addNewDefinition newDefinition:', newDefinition);
+
+    let defOwner = newDefinition.defOwner;
+    let defOwnerList = defOwner.split('~/~');
+    console.log('defOwnerList', defOwnerList);
+
+    let useDefObj = cloneDeep(this.state.JSONSchema);
+    let tmpDefObj = useDefObj;
+
+    for (let item of defOwnerList) {
+      tmpDefObj[item] || (tmpDefObj[item] = {});
+      tmpDefObj = tmpDefObj[item];
+    }
+    if (defOwnerList[defOwnerList.length - 1] !== 'definitions') {
+      tmpDefObj['definitions'] = {};
+      tmpDefObj = tmpDefObj['definitions'];
+    }
+    tmpDefObj[newDefinition.key] = newDefinition;
+    console.log('useDefObj', useDefObj);
+    this.setState((prevState, props) => {
+      return {
+        JSONSchema: {
+          ...useDefObj
+        }
+      };
     });
   }
 
@@ -414,6 +503,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></ObjectSchemaCreator>
             </div>
           </TabPane>
@@ -425,6 +518,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></StringSchemaCreator>
             </div>
           </TabPane>
@@ -436,6 +533,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></NumberSchemaCreator>
             </div>
           </TabPane>
@@ -447,6 +548,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></BooleanSchemaCreator>
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
@@ -457,6 +562,10 @@ class JsonSchema extends React.Component {
                 this.addNewProperties
               } jsonSchema={
                 this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
               }></ArraySchemaCreator>
             </div>
           </TabPane>
