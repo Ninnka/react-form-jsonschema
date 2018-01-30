@@ -292,13 +292,40 @@ class ObjectSchemaCreator extends React.Component {
       data.coverFixedItems = true;
     }
 
-    // * 判断是否应该加入依赖
+    // * 判断是否应该加入property依赖
     if (this.state.newDependencies.length > 0) {
       data.dependencies = {
         ...data.dependencies
-      }
+      };
       for (let item of this.state.newDependencies) {
         data.dependencies[item.key] = [...item.value];
+      }
+    }
+
+    // * 判断是否应该加入schema依赖
+    if (this.state.schemaDepList.length > 0) {
+      data.dependencies = {
+        ...data.dependencies
+      };
+      for (let item of this.state.schemaDepList) {
+        if (item.useOneOfDep) {
+          let tmpData = {
+            oneOf: []
+          };
+          data.dependencies[item.key] = tmpData;
+          for (let i of item.depItemOneOfList) {
+            tmpData.oneOf.push(i);
+          }
+        } else {
+          data.dependencies[item.key] = {
+            properties: {
+              ...item.properties
+            },
+            required: [
+              ...item.required
+            ]
+          }
+        }
       }
     }
 
@@ -494,8 +521,12 @@ class ObjectSchemaCreator extends React.Component {
         properties: {},
         required: [],
         enum: []
+      },
+      newOneOfDepProp: {
+        type: '',
+        key: ''
       }
-    }
+    };
     this.setState((prevState, props) => {
       return {
         schemaDepList: [
@@ -503,7 +534,7 @@ class ObjectSchemaCreator extends React.Component {
           data
         ]
       }
-    })
+    });
   }
 
   delSchemaDep = (index) => {
@@ -513,7 +544,7 @@ class ObjectSchemaCreator extends React.Component {
       return {
         schemaDepList: data
       }
-    })
+    });
   }
 
   depItemOriKeyInput = (event, index) => {
@@ -593,8 +624,91 @@ class ObjectSchemaCreator extends React.Component {
     });
   }
 
-  addOneOfListDepItem = (event) => {
+  newOneOfDepAttrChange = (event, key, index) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newOneOfDep[key] = tmpValue.split(',');
+      return {
+        schemaDepList: data
+      };
+    });
+  }
 
+  depOneOfItemNewTypeChange = (value, index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newOneOfDepProp.type = value;
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  depOneOfItemNewKeyInput = (event, index) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newOneOfDepProp.key = tmpValue;
+      return {
+        schemaDepList: data
+      };
+    })
+  }
+
+  addOneOfDepItemProperties = (index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      let key = data[index].newOneOfDepProp.key;
+
+      data[index].newOneOfDep.properties[key] = {
+        type: data[index].newOneOfDepProp.type
+      };
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  delOneOfDepItemProperties = (index, key) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      delete data[index].newOneOfDep.properties[key]
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  addOneOfListDepItem = (event, index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      let oriKey = data[index].key;
+
+      data[index].depItemOneOfList.push({
+        properties: {
+          [oriKey]: {
+            enum: data[index].newOneOfDep.enum
+          },
+          ...data[index].newOneOfDep.properties
+        },
+        required: data[index].newOneOfDep.required
+      });
+
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  delOneOfDepItem = (index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].depItemOneOfList.splice(index, 1);
+      return {
+        schemaDepList: data
+      };
+    });
   }
 
   // * ------------
@@ -759,7 +873,7 @@ class ObjectSchemaCreator extends React.Component {
                 {
                   this.state.schemaDepList.map((ele, index, arr) => {
                     return (
-                      <div key={ ele.id } className="flex-lfix">
+                      <div key={ ele.id } className="flex-lfix diving-line">
                         <Button type="danger" className="mg-top-middle" onClick={ () => {
                           this.delSchemaDep(index)
                         } }>删除</Button>
@@ -773,6 +887,7 @@ class ObjectSchemaCreator extends React.Component {
                               this.depItemOriKeyInput(e, index)
                             } }></Input>
                           </FormItem>
+
                           { !ele.useOneOfDep &&
                             <div>
                               <FormItem label="依赖者的required">
@@ -829,16 +944,20 @@ class ObjectSchemaCreator extends React.Component {
                             <div>
                               <div>
                                 <FormItem label="required">
-                                  <TextArea></TextArea>
+                                  <TextArea value={ ele.newOneOfDep.required ? ele.newOneOfDep.required.join(',') : '' } onChange={ (e) => {
+                                    this.newOneOfDepAttrChange(e, 'required', index)
+                                  } }></TextArea>
                                 </FormItem>
                                 <FormItem label="enum">
-                                  <TextArea></TextArea>
+                                  <TextArea value={ ele.newOneOfDep.enum ? ele.newOneOfDep.enum.join(',') : '' } onChange={ (e) => {
+                                    this.newOneOfDepAttrChange(e, 'enum', index)
+                                  } }></TextArea>
                                 </FormItem>
                                 <FormItem label="properties">
                                   <div className="borderbox-padleft">
                                     <FormItem label="type">
-                                      <Select allowClear value="" onChange={ (value) => {
-                                        // this.depItemNewTypeChange(value, index)
+                                      <Select allowClear value={ ele.newOneOfDepProp.type } onChange={ (value) => {
+                                        this.depOneOfItemNewTypeChange(value, index)
                                       } }>
                                         <Option value="string">string</Option>
                                         <Option value="number">number</Option>
@@ -847,17 +966,51 @@ class ObjectSchemaCreator extends React.Component {
                                       </Select>
                                     </FormItem>
                                     <FormItem label="key">
-                                      <Input value="" onChange={ (e) => {
-                                        // this.depItemOriKeyInput(e, index)
+                                      <Input value={ ele.newOneOfDepProp.key } onChange={ (e) => {
+                                        this.depOneOfItemNewKeyInput(e, index)
                                       } }></Input>
                                     </FormItem>
-                                    <Button type="primary">添加properties</Button>
+                                    <Button type="primary" onClick={ () => {
+                                      this.addOneOfDepItemProperties(index)
+                                    } }>添加properties</Button>
+                                    {
+                                      ele.newOneOfDep && ele.newOneOfDep.properties &&
+                                      Object.entries(ele.newOneOfDep.properties).map((item, i) => {
+                                        return (
+                                          <div key={ i } className="flex-lfix">
+                                            <Button type="danger" onClick={ () => {
+                                              this.delOneOfDepItemProperties(index, item[0])
+                                            } }>删除</Button>
+                                            <div className="mg-left-middle">
+                                              <span style={ {color: 'red'} }>{ item[0] + ':  ' }</span>
+                                              <span>{ JSON.stringify(item[1]) }</span>
+                                            </div>
+                                          </div>
+                                        )
+                                      })
+                                    }
+                                    <div></div>
                                   </div>
                                 </FormItem>
                               </div>
-                              <Button type="primary" onClick={ (e) => {
+                              <Button type="primary" style={ { marginBottom: '12px' } } onClick={ (e) => {
                                 this.addOneOfListDepItem(e, index)
                               } }>确认创建oneOf的item</Button>
+                              {
+                                ele.depItemOneOfList && ele.depItemOneOfList.length > 0 &&
+                                ele.depItemOneOfList.map((item, i, arr) => {
+                                  return (
+                                    <div key={ i } className="flex-lfix">
+                                      <Button type="danger" onClick={ () => {
+                                        this.delOneOfDepItem(index)
+                                      } }>删除</Button>
+                                      <div className="mg-left-middle">
+                                        <span style={ {color: 'red'} }>{ JSON.stringify(item) }</span>
+                                      </div>
+                                    </div>
+                                  )
+                                })
+                              }
                             </div>
                           }
 

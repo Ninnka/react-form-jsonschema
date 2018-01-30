@@ -4,6 +4,8 @@
 
 ## Schema
 
+### 已下特性支持
+
 - 最外层是一个唯一的object
   - 可以建立properties
   - 设置required
@@ -18,6 +20,7 @@
     - 设置description
     - 设置default
     - 使用enum
+    - 设置enumNames
     - 设置format
       - email
       - uri
@@ -43,6 +46,11 @@
       - ui:readonly
       - ui:title
       - ui:description
+      - ui:placeholder
+      - ui:options
+        - label
+        - inputType
+      - className
   - number(integer)类型
     - 选择所属的对象
     - 设置title
@@ -51,7 +59,7 @@
     - 设置最大值
     - 设置最小值
     - 使用enum
-      - 使用enum时可设置uniqueItems(成员是否唯一)
+    - 设置enumNames
     - 选择ui
       - ui:widget
         - text(default)
@@ -67,6 +75,11 @@
       - ui:readonly
       - ui:title
       - ui:description
+      - ui:placeholder
+      - ui:options
+        - label
+        - inputType
+      - className
   - object类型
     - 选择所属的对象
     - 添加properties
@@ -79,6 +92,7 @@
       - ui:order
       - ui:disabled
       - ui:readonly
+    - className
   - boolean类型
     - 选择所属的对象
     - 设置title
@@ -92,6 +106,11 @@
       - ui:disabled
       - ui:readonly
       - ui:inline
+      - ui:placeholder
+      - ui:options
+        - label
+        - inputType
+      - className
   - array类型
     - 选择所属的对象
     - 设置title
@@ -114,36 +133,38 @@
         - removeable
       - ui:disabled
       - ui:readonly
+      - className
   - Schema definitions and references
   - Property dependency
   - schema dependency
   - HTML5 Input Types
   - Custom labels for enum fields
   - Custom CSS class names
-  - Id prefix
 
-- 已下特性未支持
-  - Custom widget components（未来支持）
-  - Custom validation（未来支持）
-  - Custom error messages（未来支持）
-  - Advanced customization (不支持)
-    - Field template
-    - Array Field Template
-    - Object Field Template
-    - Error List template
-    - Custom SchemaField
-    - Customizing the default fields and widgets
-    - Custom titles
-    - Custom descriptions
+### 已下特性不支持
+
+- Advanced customization
+  - Custom validation
+  - Custom error messages
+  - Custom widget components
+  - Id prefix
+  - Field template
+  - Array Field Template
+  - Object Field Template
+  - Error List template
+  - Custom SchemaField
+  - Customizing the default fields and widgets
+  - Custom titles
+  - Custom descriptions
 
 ## Update Log
 
 ### 2018-01-29
 
+- 完善schema dependency功能
 - 新增HTML5 Input Types功能
 - 新增Custom labels for enum fields功能
 - 新增Custom CSS class names功能
-- 新增Id prefix功能
 
 ### 2018-01-28
 
