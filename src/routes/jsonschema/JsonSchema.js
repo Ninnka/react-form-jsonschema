@@ -3,6 +3,9 @@ import React from 'react';
 // * 样式
 import styles from './JsonSchema.less';
 
+// * 功能库
+import utilFunc from '@utils/functions';
+
 import { cloneDeep } from 'lodash';
 
 import ObjectSchemaCreator from '@components/SchemaCreator/ObjectSchemaCreator';
@@ -15,8 +18,7 @@ import PreviewForm from '@components/FormCreator/PreviewForm';
 
 // * antd组件
 import {
-  Tabs,
-  message
+  Tabs
 } from 'antd';
 
 const TabPane = Tabs.TabPane;
@@ -25,139 +27,127 @@ class JsonSchema extends React.Component {
 
   state = {
     JSONSchema: {
-      definitions: {
-        Thing: {
-          type: "object",
-          properties: {
-            name: {
-              type: "string",
-              title: "Default title",
-              definitions: {
-                Hg: {
-                  type: "string",
-                  title: "nyrethy"
-                }
-              }
-            }
-          },
-          definitions: {
-            News: {
-              type: "string",
-              title: "a",
-              default: "dd"
-            },
-            Ew: {
-              type: 'array',
-              title: 'feiw',
-              items: [
-                {
-                  type: 'string',
-                  title: 'ruwe'
-                }
-              ]
-            }
-          }
-        },
-        Shing: {
-          type: "object",
-          properties: {
-            name: {
-              type: "string",
-              title: "Default title"
-            }
-          },
-          definitions: {
-            Io: {
-              type: "number",
-              title: "a",
-              default: "dd",
-              definitions: {
-                Rt: {
-                  type: "string",
-                  title: "uriqy"
-                }
-              }
-            }
-          }
-        }
-      },
-      type: 'array',
-      title: 'fw items',
-      items: [{
-        type: 'string',
-        title: 'grew'
-      }, {
-        type: 'object',
-        title: 'heiouwq',
-        properties: {}
-      }],
-      additionalItems: {
-        type: 'object',
-        title: 'bytrhjh',
-        properties: {}
-      }
+      // definitions: {
+      //   Thing: {
+      //     type: "object",
+      //     properties: {
+      //       name: {
+      //         type: "string",
+      //         title: "Default title",
+      //         definitions: {
+      //           Hg: {
+      //             type: "string",
+      //             title: "nyrethy"
+      //           }
+      //         }
+      //       }
+      //     },
+      //     definitions: {
+      //       News: {
+      //         type: "string",
+      //         title: "a",
+      //         default: "dd"
+      //       },
+      //       Ew: {
+      //         type: 'array',
+      //         title: 'feiw',
+      //         items: [
+      //           {
+      //             type: 'string',
+      //             title: 'ruwe'
+      //           }
+      //         ]
+      //       }
+      //     }
+      //   },
+      //   Shing: {
+      //     type: "object",
+      //     properties: {
+      //       name: {
+      //         type: "string",
+      //         title: "Default title"
+      //       }
+      //     },
+      //     definitions: {
+      //       Io: {
+      //         type: "number",
+      //         title: "a",
+      //         default: "dd",
+      //         definitions: {
+      //           Rt: {
+      //             type: "string",
+      //             title: "uriqy"
+      //           }
+      //         }
+      //       }
+      //     }
+      //   }
+      // },
+      // type: 'array',
+      // title: 'fw items',
+      // items: {}
       // type: 'object',
       // title: 'outer-object-title',
       // description: 'outer-object-desc',
       // required: [],
       // properties: {
-        // tsobject: {
-        //   type: 'object',
-        //   title: 'test title',
-        //   properties: {
-        //     gfru: {
-        //       type: 'object',
-        //       title: 'vgrhtyh',
-        //       properties: {}
-        //     },
-        //     fw: {
-        //       type: 'array',
-        //       title: 'dewq',
-        //       items: {
-        //         type: 'array',
-        //         title: 'fw items',
-        //         // properties: {},
-        //         items: [{
-        //           type: 'string',
-        //           title: 'grew'
-        //         }, {
-        //           type: 'object',
-        //           title: 'heiouwq',
-        //           properties: {}
-        //         }],
-        //         additionalItems: {
-        //           type: 'object',
-        //           title: 'bytrhjh',
-        //           properties: {}
-        //         }
-        //       }
-        //     },
-        //     hg: {
-        //       type: 'array',
-        //       title: 'froiehf',
-        //       items: {
-        //         type: 'string',
-        //         title: 'froeih',
-        //         enum: [
-        //           'tu',
-        //           'gbyu'
-        //         ]
-        //       }
-        //     }
-        //   }
-        // },
-        // tsarray: {
-        //   type: 'array',
-        //   title: 'tsarray tittle',
-        //   items: [{
-        //     type: 'string',
-        //     title: 'grew'
-        //   }, {
-        //     type: 'object',
-        //     title: 'heiouwq',
-        //     properties: {}
-        //   }]
-        // }
+      //   tsobject: {
+      //     type: 'object',
+      //     title: 'test title',
+      //     properties: {
+      //       gfru: {
+      //         type: 'object',
+      //         title: 'vgrhtyh',
+      //         properties: {}
+      //       },
+      //       fw: {
+      //         type: 'array',
+      //         title: 'dewq',
+      //         items: {
+      //           type: 'array',
+      //           title: 'fw items',
+      //           // properties: {},
+      //           items: [{
+      //             type: 'string',
+      //             title: 'grew'
+      //           }, {
+      //             type: 'object',
+      //             title: 'heiouwq',
+      //             properties: {}
+      //           }],
+      //           additionalItems: {
+      //             type: 'object',
+      //             title: 'bytrhjh',
+      //             properties: {}
+      //           }
+      //         }
+      //       },
+      //       hg: {
+      //         type: 'array',
+      //         title: 'froiehf',
+      //         items: {
+      //           type: 'string',
+      //           title: 'froeih',
+      //           enum: [
+      //             'tu',
+      //             'gbyu'
+      //           ]
+      //         }
+      //       }
+      //     }
+      //   },
+      //   tsarray: {
+      //     type: 'array',
+      //     title: 'tsarray tittle',
+      //     items: [{
+      //       type: 'string',
+      //       title: 'grew'
+      //     }, {
+      //       type: 'object',
+      //       title: 'heiouwq',
+      //       properties: {}
+      //     }]
+      //   }
       // }
     },
     UISchema: {},
@@ -209,11 +199,14 @@ class JsonSchema extends React.Component {
           data.FormData = {};
         } else if (newProperty.type === 'array') {
           data.FormData = [];
+        } else {
+          data.FormData = '';
         }
 
         newProperty.ui = newProperty.ui ? newProperty.ui : {};
         for (let item of Object.entries(newProperty.ui)) {
-          data.UISchema['ui:' + item[0]] = item[1];
+          let uiPrefix = item[0] !== 'classNames' ? 'ui:' : '';
+          data.UISchema[uiPrefix + item[0]] = item[1];
         }
         delete newProperty.ui;
 
@@ -227,7 +220,7 @@ class JsonSchema extends React.Component {
           ...data
         }
       }, () => {
-        this.messageSuccess({
+        utilFunc.messageSuccess({
           message: '添加成功'
         });
       });
@@ -274,15 +267,15 @@ class JsonSchema extends React.Component {
         tmpProperties = tmpProperties[item];
       }
 
-      // * ui相关---------------
+      // * ui相关start---------------
       // * 创建ui对象路径
       item !== 'global' && !useUISchema[item] && (useUISchema[item] = {});
       item !== 'global' && (useUISchema = useUISchema[item]);
-      // * ui相关---------------
+      // * ui相关end---------------
 
-      // * formData相关------------
+      // * formData相关start------------
       // * 创建tmpProperties对应的formData
-      let jsType = this.getPropertyJsType(useFormData);
+      let jsType = utilFunc.getPropertyJsType(useFormData);
       if (item !== 'global' && !useFormData[item]) {
         let tmpD = tmpProperties.type === 'array' ? [] : {};
         // * 如果useFormData是数组，则添加一个对象进去
@@ -296,10 +289,10 @@ class JsonSchema extends React.Component {
         jsType.indexOf('Object') !== -1 && !useFormData[item] && (useFormData[item] = tmpD);
       }
       item !== 'global' && (useFormData = useFormData[item]);
-      // * formData相关------------
+      // * formData相关end------------
     }
 
-    // * ui相关---------------
+    // * ui相关start---------------
     // * 设置ui最终位置的js类型与key名
     if (tmpProperties.type === 'object' || (ownerList.length === 1 && ownerList[0] === '')) {
       useUISchema[newProperty.key] = {
@@ -312,7 +305,7 @@ class JsonSchema extends React.Component {
         useUISchema['additionalItems'] = useUISchema['items'];
       }
 
-      if (this.getPropertyJsType(useUISchema['items']).indexOf('Array') === -1) {
+      if (utilFunc.getPropertyJsType(useUISchema['items']).indexOf('Array') === -1) {
         useUISchema['items'] = [];
       }
       useUISchema = useUISchema['items'];
@@ -322,7 +315,7 @@ class JsonSchema extends React.Component {
       useUISchema['items'] = {};
       useUISchema = useUISchema['items'];
     } else {
-      let hasArray = this.getPropertyJsType(tmpProperties.items).indexOf('Array');
+      let hasArray = utilFunc.getPropertyJsType(tmpProperties.items).indexOf('Array');
       let name = hasArray !== -1 ? 'additionalItems' : 'items';
       useUISchema[name] = {};
       useUISchema = useUISchema[name];
@@ -330,10 +323,11 @@ class JsonSchema extends React.Component {
 
     // * 将ui加入到目标位置
     newProperty.ui = newProperty.ui ? newProperty.ui : {};
-    if (this.getPropertyJsType(useUISchema).indexOf('Array') !== -1) {
+    if (utilFunc.getPropertyJsType(useUISchema).indexOf('Array') !== -1) {
       let data = {};
       for (let item of Object.entries(newProperty.ui)) {
-        data['ui:' + item[0]] = item[1];
+        let uiPrefix = item[0] !== 'classNames' ? 'ui:' : '';
+        data[uiPrefix + item[0]] = item[1];
       }
       useUISchema[tmpProperties.items.length] = data;
       for (let i = 0; i < tmpProperties.items.length; i++) {
@@ -341,27 +335,36 @@ class JsonSchema extends React.Component {
           useUISchema[i] = {};
         }
       }
-    } else if (this.getPropertyJsType(useUISchema).indexOf('Object') !== -1) {
+    } else if (utilFunc.getPropertyJsType(useUISchema).indexOf('Object') !== -1) {
       for (let item of Object.entries(newProperty.ui)) {
-        useUISchema['ui:' + item[0]] = item[1];
+        let uiPrefix = item[0] !== 'classNames' ? 'ui:' : '';
+        useUISchema[uiPrefix + item[0]] = item[1];
       }
     }
 
     delete newProperty.ui;
-    // * ui相关---------------
+    // * ui相关end---------------
 
-    // * formData相关------------
+    // * formData相关start------------
     // * 如果没有设置default，则再formdata中设置对应的key
     if (newProperty.type === 'object') {
       useFormData[newProperty.key] = {};
-    } else if (newProperty.type === 'array') {
+    }
+    //  else if (newProperty.type === 'array' && newProperty.asFixedItems) {
+    //   useFormData[newProperty.key] !== undefined ? useFormData[newProperty.key].push('') : (useFormData[newProperty.key] = ['']);
+    // }
+    else if (newProperty.type === 'array') {
       useFormData[newProperty.key] = [];
     } else if (newProperty.default === undefined) {
-      if (this.getPropertyJsType(useFormData).indexOf('Object') !== -1) {
+      if (utilFunc.getPropertyJsType(useFormData).indexOf('Object') !== -1) {
         useFormData[newProperty.key] = '';
+      } else if (utilFunc.getPropertyJsType(useFormData).indexOf('Array') !== -1) {
+        newProperty.type === 'boolean' && useFormData.push(false);
+        newProperty.type === 'number' && useFormData.push(0);
+        newProperty.type === 'string' && useFormData.push('');
       }
     }
-    // * formData相关------------
+    // * formData相关end------------
 
     // * 如果是使用$ref的情况，获取$ref的正式路径
     if (newProperty.$ref) {
@@ -382,7 +385,7 @@ class JsonSchema extends React.Component {
     ) {
       delete newProperty.asFixedItems;
       if (Object.prototype.toString.call(tmpProperties.items).indexOf('Object') !== -1) {
-        tmpProperties.additionalItems = tmpProperties.items;
+        Object.keys(tmpProperties.items).length > 0 && (tmpProperties.additionalItems = tmpProperties.items);
         tmpProperties.items = [];
         tmpProperties.items.push(newProperty);
       } else if (Object.prototype.toString.call(tmpProperties.items).indexOf('Array') !== -1) {
@@ -427,15 +430,22 @@ class JsonSchema extends React.Component {
         ...prevState.UISchema,
         ...tmpUISchema
       };
-      data.FormData = {
-        ...prevState.FormData,
-        ...tmpFormData
-      };
+      if (utilFunc.getPropertyJsType(tmpFormData).indexOf('Object') !== -1) {
+        data.FormData = {
+          ...prevState.FormData,
+          ...tmpFormData
+        };
+      } else if (utilFunc.getPropertyJsType(tmpFormData).indexOf('Array') !== -1) {
+        data.FormData = [
+          ...prevState.FormData,
+          ...tmpFormData
+        ];
+      }
       return {
         ...data
       }
     }, () => {
-      this.messageSuccess({
+      utilFunc.messageSuccess({
         message: '添加成功'
       });
     });
@@ -470,25 +480,6 @@ class JsonSchema extends React.Component {
         }
       };
     });
-  }
-
-  // * ------------
-
-  messageSuccess = (param = {
-    message: '成功'
-  }) => {
-    message.success(param.message, () => {
-
-    });
-  }
-  messageError = () => {
-
-  }
-  messageWarning = () => {
-
-  }
-  messageInfo = () => {
-
   }
 
   // * ------------
@@ -572,7 +563,13 @@ class JsonSchema extends React.Component {
             </div>
           </TabPane>
           <TabPane tab="表单预览" key="6">
-            <PreviewForm></PreviewForm>
+            <PreviewForm JSONSchema={
+              this.state.JSONSchema
+            } UISchema={
+              this.state.UISchema
+            } FormData={
+              this.state.FormData
+            }></PreviewForm>
           </TabPane>
         </Tabs>
       </div>
