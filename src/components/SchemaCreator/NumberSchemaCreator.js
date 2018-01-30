@@ -4,6 +4,9 @@ import React from 'react';
 
 import NumberUICreator from '@components/SchemaCreator/UICreator/NumberUICreator';
 
+// * 功能库
+import utilFund from '@utils/functions';
+
 // * antd组件
 import {
   Form,
@@ -23,16 +26,22 @@ class NumberSchemaCreator extends React.Component {
 
   state = {
     ownerList: [],
+    defList: [],
+    refList: [],
     enumStatus: false,
     ownerTypeStatus: 'object',
     asFixedItems: false,
     coverFixedItems: false,
     asInteger: false,
+    asCreateDefinition: false,
+    asDefinition: false,
     numberSchema: {
       key: '',
       title: '',
       description: '',
-      owner: ''
+      owner: '',
+      $ref: '',
+      defOwner: 'definitions'
     },
     numberSchemaAddition: {
       default: '',
@@ -47,27 +56,38 @@ class NumberSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
-    let tmpOwnerList = [];
-    if (nextProps.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
-    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
-    }
-    this.setState({
-      ownerList: tmpOwnerList
-    });
+    this.compuListPrepare(nextProps);
   }
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
+    this.compuListPrepare(this.props);
+  }
+
+  // * ------------
+
+  compuListPrepare = (props) => {
     let tmpOwnerList = [];
-    if (this.props.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
-    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
+    if (props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', props.properties));
+    } else if (props.jsonSchema && props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', props.jsonSchema]);
+    }
+    let tmpDefList = [];
+    if (props.definitions) {
+      tmpDefList = this.compuDefList('', props.definitions);
+    }
+    let tmpRefList = [];
+    for (let index = 0; index < tmpDefList.length; index++) {
+      let tmpList = tmpDefList[index].path.split('~/~');
+      if (tmpList.length > 0 && tmpList[tmpList.length - 1] !== 'definitions') {
+        tmpRefList.push(tmpDefList[index]);
+      }
     }
     this.setState({
-      ownerList: tmpOwnerList
+      ownerList: tmpOwnerList,
+      defList: tmpDefList,
+      refList: tmpRefList
     });
   }
 
@@ -132,6 +152,88 @@ class NumberSchemaCreator extends React.Component {
 
   // * ------------
 
+  compuDefList = (path, item) => {
+    // console.log('compuDefList');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    tmpDefList.push({
+      path: prePath,
+      type: 'object'
+    });
+
+    let defEntriesList = Object.entries(item);
+    // console.log('defEntriesList', defEntriesList);
+
+    for (let item of defEntriesList) {
+      let tmpPath = prePath + '~/~' + item[0];
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      tmpDefList = this.compuDefListPure(tmpPath, item[1], tmpDefList);
+    }
+    return tmpDefList;
+  }
+
+  compuDefListObj = (path, param) => {
+    console.log('compuDefListObj');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    let tmpPath = prePath + '~/~' + param.key;
+    console.log('tmpPath', tmpPath);
+    tmpDefList.push({
+      path: tmpPath,
+      type: 'object'
+    });
+    tmpDefList = this.compuDefListPure(tmpPath, param.item, tmpDefList);
+    return tmpDefList;
+  }
+
+  compuDefListArray = (path, item) => {
+    console.log('compuDefListArray');
+    let tmpDefList = [];
+
+    let prePath = path + '~/~items';
+    let len = item.length;
+    for (let i = 0; i < len; i++) {
+      let tmpPath = prePath + '~/~' + i;
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      console.log('item[i]', item[i]);
+      tmpDefList = this.compuDefListPure(tmpPath, item[i], tmpDefList);
+    }
+    return tmpDefList;
+  }
+
+  compuDefListPure = (path, item, list) => {
+    let tmpDefList = list;
+    let tmpPath = path;
+    let tmpItem = item;
+
+    if (tmpItem.definitions) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
+    }
+    if (tmpItem.properties && Object.keys(tmpItem.properties).length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
+    }
+    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
+    }
+    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
+    }
+    if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
+    }
+    return tmpDefList;
+  }
+
+  // * ------------
+
   showConfirm = () => {
     confirm({
       title: '提示',
@@ -150,6 +252,8 @@ class NumberSchemaCreator extends React.Component {
       asFixedItems: false,
       coverFixedItems: false,
       asInteger: false,
+      asDefinition: false,
+      asCreateDefinition: false,
       numberSchema: {
         key: '',
         title: '',
@@ -174,7 +278,7 @@ class NumberSchemaCreator extends React.Component {
     if (!this.state.numberSchema.key) {
       return;
     }
-    if (this.state.numberSchema.owner) {
+    if (this.state.numberSchema.owner || this.state.numberSchema.asCreateDefinition) {
       this.submitForm();
     } else {
       this.showConfirm();
@@ -196,11 +300,27 @@ class NumberSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    // * 如果有设置ui，则将ui添加到UISchema
-    if (Object.keys(this.uiCreator.state.ui).length > 0) {
-      data.ui = this.uiCreator.state.ui;
+
+    if (this.state.asDefinition) {
+      let refData = {
+        owner: data.owner,
+        $ref: data.$ref,
+        key: data.key,
+        refStatus: true
+      }
+      this.props.addNewProperties(refData);
+    } else if (this.state.asCreateDefinition) {
+       delete data.$ref;
+       this.props.addNewDefinition(data);
+    } else {
+      delete data.$ref;
+      // * 如果有设置ui，则将ui添加到UISchema
+      if (Object.keys(this.uiCreator.state.ui).length > 0) {
+        data.ui = this.uiCreator.state.ui;
+      }
+      this.props.addNewProperties(data);
     }
-    this.props.addNewProperties(data);
+    // this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
 
@@ -485,89 +605,183 @@ class NumberSchemaCreator extends React.Component {
            && value.indexOf(',') === value.length - 1;
   }
 
+  asDefinitionStatusChange = (e) => {
+    let checked = e.target.checked;
+    this.setState((prevState, props) => {
+      return {
+        asDefinition: checked,
+        asCreateDefinition: false
+      };
+    });
+  }
+
+  asCreateDefinitionStatusChange = (e) => {
+   let checked = e.target.checked;
+   this.setState((prevState, props) => {
+     return {
+       asDefinition: false,
+       asCreateDefinition: checked
+     };
+   }); 
+  }
+
+  // * 选择的definition创建位置路径变化时
+  defOwnerChange = (value) => {
+    this.setState((prevState, props) => {
+      return {
+        numberSchema: {
+          ...prevState.numberSchema,
+          defOwner: prevState.defList[value].path
+        }
+      };
+    });
+  }
+
+  refChange = (ref) => {
+    this.setState((prevState, props) => {
+      return {
+        numberSchema: {
+          ...prevState.numberSchema,
+          $ref: prevState.refList[ref].path
+        }
+      }
+    });
+  }
+
   // * ------------
 
   render () {
     return (
       <Form>
-        <FormItem label="选择所属对象">
-          <Select allowClear value={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
-            {
-              this.state.ownerList.map((ele, index, arr) => {
-                return (
-                  <Option key={ ele.path + index } value={ index }>
-                    <div style={ {
-                      position: 'relative'
-                    } }>
-                      <span style={ {
-                        position: 'absolute',
-                        top: '0',
-                        left: '0'
-                      } }>{ ele.type + ' : ' }</span>
-                      <span style={ {
-                        marginLeft: '70px'
-                      } }>{ ele.path }</span>
-                    </div>
-                  </Option>
-                )
-              })
+        <FormItem label="$ref">
+          <Checkbox checked={this.state.asDefinition} onChange={this.asDefinitionStatusChange}>设置ref</Checkbox>
+        </FormItem>
+        {
+          this.state.asDefinition &&
+          <FormItem label="选择definition" className="nested-form-item">
+            <Select allowClear value={ this.state.numberSchema.$ref } onChange={ this.refChange }>
+              {
+                this.state.refList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      { ele.path }
+                    </Option>
+                  )
+                })
+              }
+            </Select>
+          </FormItem>
+        }
+        {
+          !this.state.asDefinition &&
+          <FormItem>
+            <Checkbox checked={this.state.asCreateDefinition} onChange={this.asCreateDefinitionStatusChange}>创建为definition，选择definition的创建位置</Checkbox>
+          </FormItem>
+        }
+        {
+          this.state.asCreateDefinition && 
+          <FormItem label="选择所属definition" className="nested-form-item">
+            <Select value={ this.state.numberSchema.defOwner } onChange={ this.defOwnerChange }>
+              {
+                this.state.defList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      { ele.path }
+                    </Option>
+                  )
+                })
+              }
+            </Select>
+          </FormItem>
+        }
+        {
+          !this.state.asCreateDefinition &&
+          <FormItem label="选择所属对象">
+            <Select allowClear value={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
+              {
+                this.state.ownerList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      <div style={ {
+                        position: 'relative'
+                      } }>
+                        <span style={ {
+                          position: 'absolute',
+                          top: '0',
+                          left: '0'
+                        } }>{ ele.type + ' : ' }</span>
+                        <span style={ {
+                          marginLeft: '70px'
+                        } }>{ ele.path }</span>
+                      </div>
+                    </Option>
+                  )
+                })
+              }
+            </Select>
+            { this.state.ownerTypeStatus === 'array' &&
+              <div>
+                <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
+                <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
+                <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
+              </div>
             }
-          </Select>
-          { this.state.ownerTypeStatus === 'array' &&
-            <div>
-              <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
-              <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
-              <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
-            </div>
-          }
-        </FormItem>
-
-        <FormItem label="限制为integer">
-          <Checkbox checked={ this.state.asInteger } onChange={ this.asIntegerStatusChange }>选中后，会将数值强制转换为整型</Checkbox>
-        </FormItem>
+          </FormItem>
+        }
 
         <FormItem label="key">
           <Input value={ this.state.numberSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
+        
+        {
+          !this.state.asDefinition && 
+          <div>
+            <FormItem label="限制为integer">
+              <Checkbox checked={ this.state.asInteger } onChange={ this.asIntegerStatusChange }>选中后，会将数值强制转换为整型</Checkbox>
+            </FormItem>
 
-        <FormItem label="title">
-          <Input value={ this.state.numberSchema.title } onInput={ this.titleInput }></Input>
-        </FormItem>
+            <FormItem label="title">
+              <Input value={ this.state.numberSchema.title } onInput={ this.titleInput }></Input>
+            </FormItem>
 
-        <FormItem label="description">
-          <Input value={ this.state.numberSchema.description } onInput={ this.descriptionInput }></Input>
-        </FormItem>
+            <FormItem label="description">
+              <Input value={ this.state.numberSchema.description } onInput={ this.descriptionInput }></Input>
+            </FormItem>
 
-        <FormItem label="default">
-          <Input value={ this.state.numberSchemaAddition.default } onInput={ this.defaultInput }></Input>
-        </FormItem>
+            <FormItem label="default">
+              <Input value={ this.state.numberSchemaAddition.default } onInput={ this.defaultInput }></Input>
+            </FormItem>
 
-        <FormItem label="enum">
-          <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
-          <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchemaAddition.enum ? this.state.numberSchemaAddition.enum.join(',') : '' } onInput={ this.enumValueInput }></TextArea>
-        </FormItem>
+            <FormItem label="enum">
+              <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
+              <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchemaAddition.enum ? this.state.numberSchemaAddition.enum.join(',') : '' } onInput={ this.enumValueInput }></TextArea>
+            </FormItem>
 
-        <FormItem label="最小值">
-          <Input value={ this.state.numberSchemaAddition.minimum } onInput={ this.minimumInput }></Input>
-        </FormItem>
+            <FormItem label="最小值">
+              <Input value={ this.state.numberSchemaAddition.minimum } onInput={ this.minimumInput }></Input>
+            </FormItem>
 
-        <FormItem label="最大值">
-          <Input value={ this.state.numberSchemaAddition.maximum } onInput={ this.maximumInput }></Input>
-        </FormItem>
+            <FormItem label="最大值">
+              <Input value={ this.state.numberSchemaAddition.maximum } onInput={ this.maximumInput }></Input>
+            </FormItem>
 
-        <FormItem label="值差">
-          <Input value={ this.state.numberSchemaAddition.multipleOf } onInput={ this.multipleOfInput }></Input>
-        </FormItem>
-
-        <FormItem label="设置ui">
-          <div className="nested-form-item">
-            <NumberUICreator ref={
-              (uiCreator) => {
-                this.uiCreator = uiCreator;
-              }
-            }></NumberUICreator>
+            <FormItem label="值差">
+              <Input value={ this.state.numberSchemaAddition.multipleOf } onInput={ this.multipleOfInput }></Input>
+            </FormItem>
+            {
+              !this.state.asCreateDefinition &&
+              <FormItem label="设置ui">
+                <div className="nested-form-item">
+                  <NumberUICreator ref={
+                    (uiCreator) => {
+                      this.uiCreator = uiCreator;
+                    }
+                  }></NumberUICreator>
+                </div>
+              </FormItem>
+            }
           </div>
-        </FormItem>
+        }
 
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>

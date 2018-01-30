@@ -180,18 +180,15 @@ class BooleanSchemaCreator extends React.Component {
         refStatus: true
       }
       this.props.addNewProperties(refData);
-      console.log('添加asDefinition');
     } else if (this.state.asCreateDefinition) {
        delete data.$ref;
        this.props.addNewDefinition(data);
-       console.log('创建Definition');
     } else {
       delete data.$ref;
       if (this.UIschema.state && Object.keys(this.UIschema.state.ui).length > 0) {
         data.ui = this.UIschema.state.ui;
       }
       this.props.addNewProperties(data);
-      console.log('普通添加');
     }
     console.log(this.state.ownerList);
     setTimeout(this.resetForm, 0);
@@ -434,8 +431,8 @@ class BooleanSchemaCreator extends React.Component {
   defOwnerChange = (value) => {
     this.setState((prevState, props) => {
       return {
-        objectSchema: {
-          ...prevState.objectSchema,
+        booleanSchema: {
+          ...prevState.booleanSchema,
           defOwner: prevState.defList[value].path
         }
       };
@@ -466,9 +463,12 @@ class BooleanSchemaCreator extends React.Component {
             </Select>
           </FormItem>
         }
-        <FormItem>
-          <Checkbox checked={this.state.asCreateDefinition} onChange={this.asCreateDefinitionStatusChange}>创建Definition</Checkbox>
-        </FormItem>
+        {
+          !this.state.asDefinition &&
+          <FormItem>
+            <Checkbox checked={this.state.asCreateDefinition} onChange={this.asCreateDefinitionStatusChange}>创建Definition</Checkbox>
+          </FormItem>
+        }
         {
           this.state.asCreateDefinition && 
           <FormItem label="选择所属definition" className="nested-form-item">
