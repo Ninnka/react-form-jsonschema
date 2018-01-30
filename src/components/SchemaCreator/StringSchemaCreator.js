@@ -2,8 +2,10 @@ import React from 'react';
 
 // * 样式
 
-
 import StringUICreator from '@components/SchemaCreator/UICreator/StringUICreator';
+
+// * 功能库
+import utilFund from '@utils/functions';
 
 // * antd组件
 import {
@@ -27,12 +29,18 @@ class StringSchemaCreator extends React.Component {
     ownerTypeStatus: 'object',
     asFixedItems: false,
     coverFixedItems: false,
+    refStatus: false,
+    asDefinition: false,
     ownerList: [],
+    defList: [],
+    refList: [],
     stringSchema: {
       key: '',
       title: '',
       description: '',
-      owner: ''
+      owner: '',
+      defOwner: 'definitions',
+      $ref: ''
     },
     stringSchemaAddition: {
       default: '',
@@ -52,32 +60,39 @@ class StringSchemaCreator extends React.Component {
   ]
 
   componentWillReceiveProps (nextProps) {
-    console.log('o nextProps', nextProps);
-    let tmpOwnerList = [];
-    if (nextProps.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
-    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
-    }
-    this.setState({
-      ownerList: tmpOwnerList
-    });
+    this.compuListPrepare(nextProps);
   }
 
   componentDidMount () {
-    console.log('o properties: ', this.props.properties);
-    let tmpOwnerList = [];
-    if (this.props.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
-    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
-    }
-    this.setState({
-      ownerList: tmpOwnerList
-    });
+    this.compuListPrepare(this.props);
   }
 
   // * ------------
+
+  compuListPrepare = (props) => {
+    let tmpOwnerList = [];
+    if (props.properties) {
+      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', props.properties));
+    } else if (props.jsonSchema && props.jsonSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['global', props.jsonSchema]);
+    }
+    let tmpDefList = [];
+    if (props.definitions) {
+      tmpDefList = this.compuDefList('', props.definitions);
+    }
+    let tmpRefList = [];
+    for (let index = 0; index < tmpDefList.length; index++) {
+      let tmpList = tmpDefList[index].path.split('~/~');
+      if (tmpList.length > 0 && tmpList[tmpList.length - 1] !== 'definitions') {
+        tmpRefList.push(tmpDefList[index]);
+      }
+    }
+    this.setState({
+      ownerList: tmpOwnerList,
+      defList: tmpDefList,
+      refList: tmpRefList
+    });
+  }
 
   compuOwnerList = (path, properties) => {
     let tmpOwnerList = [];
@@ -138,6 +153,88 @@ class StringSchemaCreator extends React.Component {
 
   // * ------------
 
+  compuDefList = (path, item) => {
+    // console.log('compuDefList');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    tmpDefList.push({
+      path: prePath,
+      type: 'object'
+    });
+
+    let defEntriesList = Object.entries(item);
+    // console.log('defEntriesList', defEntriesList);
+
+    for (let item of defEntriesList) {
+      let tmpPath = prePath + '~/~' + item[0];
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      tmpDefList = this.compuDefListPure(tmpPath, item[1], tmpDefList);
+    }
+    return tmpDefList;
+  }
+
+  compuDefListObj = (path, param) => {
+    console.log('compuDefListObj');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    let tmpPath = prePath + '~/~' + param.key;
+    console.log('tmpPath', tmpPath);
+    tmpDefList.push({
+      path: tmpPath,
+      type: 'object'
+    });
+    tmpDefList = this.compuDefListPure(tmpPath, param.item, tmpDefList);
+    return tmpDefList;
+  }
+
+  compuDefListArray = (path, item) => {
+    console.log('compuDefListArray');
+    let tmpDefList = [];
+
+    let prePath = path + '~/~items';
+    let len = item.length;
+    for (let i = 0; i < len; i++) {
+      let tmpPath = prePath + '~/~' + i;
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      console.log('item[i]', item[i]);
+      tmpDefList = this.compuDefListPure(tmpPath, item[i], tmpDefList);
+    }
+    return tmpDefList;
+  }
+
+  compuDefListPure = (path, item, list) => {
+    let tmpDefList = list;
+    let tmpPath = path;
+    let tmpItem = item;
+
+    if (tmpItem.definitions) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
+    }
+    if (tmpItem.properties && Object.keys(tmpItem.properties).length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
+    }
+    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
+    }
+    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
+    }
+    if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
+    }
+    return tmpDefList;
+  }
+
+  // * ------------
+
   showConfirm = () => {
     confirm({
       title: '提示',
@@ -155,11 +252,15 @@ class StringSchemaCreator extends React.Component {
       ownerTypeStatus: 'object',
       asFixedItems: false,
       coverFixedItems: false,
+      refStatus: false,
+      asDefinition: false,
       stringSchema: {
         key: '',
         title: '',
         description: '',
-        owner: ''
+        owner: '',
+        defOwner: 'definitions',
+        $ref: ''
       },
       stringSchemaAddition: {
         default: '',
@@ -176,7 +277,7 @@ class StringSchemaCreator extends React.Component {
     if (!this.state.stringSchema.key) {
       return;
     }
-    if (this.state.stringSchema.owner) {
+    if (this.state.stringSchema.owner || this.state.asDefinition) {
       this.submitForm();
     } else {
       this.showConfirm();
@@ -198,11 +299,25 @@ class StringSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    // * 如果有设置ui，则将ui添加到UISchema
-    if (Object.keys(this.uiCreator.state.ui).length > 0) {
-      data.ui = this.uiCreator.state.ui;
+
+    if (this.state.asDefinition) {
+      delete data.$ref;
+      this.props.addNewDefinition(data);
+    } else if (this.state.refStatus) {
+      let tmpData= {
+        owner: data.owner,
+        $ref: data.$ref,
+        key: data.key,
+        refStatus: true
+      }
+      tmpData.$ref && this.props.addNewProperties(tmpData);
+    } else {
+      // * 如果有设置ui，则将ui添加到UISchema
+      if (Object.keys(this.uiCreator.state.ui).length > 0) {
+        data.ui = this.uiCreator.state.ui;
+      }
+      this.props.addNewProperties(data);
     }
-    this.props.addNewProperties(data);
     setTimeout(this.resetForm, 0);
   }
 
@@ -364,88 +479,185 @@ class StringSchemaCreator extends React.Component {
     });
   }
 
+  refStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      return {
+        refStatus: checked,
+        asDefinition: false
+      };
+    });
+  }
+
+  // * 选择的definition引用路径变化时
+  refChange = (value) => {
+    this.setState((prevState, props) => {
+      return {
+        stringSchema: {
+          ...prevState.stringSchema,
+          $ref: prevState.refList[value].path
+        }
+      };
+    });
+  }
+
+  defStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      return {
+        asDefinition: checked,
+        refStatus: false
+      };
+    });
+  }
+
+  // * 选择的definition创建位置路径变化时
+  defOwnerChange = (value) => {
+    this.setState((prevState, props) => {
+      return {
+        stringSchema: {
+          ...prevState.stringSchema,
+          defOwner: prevState.defList[value].path
+        }
+      };
+    });
+  }
+
   // * ------------
 
   render () {
     return (
       <Form>
-        <FormItem label="选择所属对象">
-          <Select allowClear value={ this.state.stringSchema.owner } onChange={ this.ownerChange }>
-            {
-              this.state.ownerList.map((ele, index, arr) => {
-                return (
-                  <Option key={ ele.path + index } value={ index }>
-                    <div style={ {
-                      position: 'relative'
-                    } }>
-                      <span style={ {
-                        position: 'absolute',
-                        top: '0',
-                        left: '0'
-                      } }>{ ele.type + ' : ' }</span>
-                      <span style={ {
-                        marginLeft: '70px'
-                      } }>{ ele.path }</span>
-                    </div>
-                  </Option>
-                )
-              })
-            }
-          </Select>
-          { this.state.ownerTypeStatus === 'array' &&
-            <div>
-              <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
-              <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
-              <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
-            </div>
+
+        <FormItem label="$ref">
+          <Checkbox checked={this.state.refStatus} onChange={
+            this.refStatusChange
+          }>
+            引用definition
+          </Checkbox>
+          { this.state.refStatus &&
+            <Select allowClear value={ this.state.stringSchema.$ref } onChange={ this.refChange }>
+              {
+                this.state.refList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      { ele.path }
+                    </Option>
+                  )
+                })
+              }
+            </Select>
           }
         </FormItem>
+
+        { !this.state.refStatus &&
+            <FormItem label="选择创建的definition的位置">
+              <Checkbox checked={this.state.asDefinition} onChange={
+                  this.defStatusChange
+                }>
+                  创建为definition，选择definition的创建位置
+              </Checkbox>
+              { this.state.asDefinition &&
+                <Select value={ this.state.stringSchema.defOwner } onChange={ this.defOwnerChange }>
+                  {
+                    this.state.defList.map((ele, index, arr) => {
+                      return (
+                        <Option key={ ele.path + index } value={ index }>
+                          { ele.path }
+                        </Option>
+                      )
+                    })
+                  }
+                </Select>
+              }
+            </FormItem>
+        }
+        {
+          !this.state.asDefinition &&
+          <FormItem label="选择所属对象">
+            <Select allowClear value={ this.state.stringSchema.owner } onChange={ this.ownerChange }>
+              {
+                this.state.ownerList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      <div style={ {
+                        position: 'relative'
+                      } }>
+                        <span style={ {
+                          position: 'absolute',
+                          top: '0',
+                          left: '0'
+                        } }>{ ele.type + ' : ' }</span>
+                        <span style={ {
+                          marginLeft: '70px'
+                        } }>{ ele.path }</span>
+                      </div>
+                    </Option>
+                  )
+                })
+              }
+            </Select>
+            { this.state.ownerTypeStatus === 'array' &&
+              <div>
+                <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
+                <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
+                <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
+              </div>
+            }
+          </FormItem>
+        }
 
         <FormItem label="key">
           <Input value={ this.state.stringSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
 
-        <FormItem label="title">
-          <Input value={ this.state.stringSchema.title } onInput={ this.titleInput }></Input>
-        </FormItem>
+        { !this.state.refStatus &&
+          <div>
+            <FormItem label="title">
+              <Input value={ this.state.stringSchema.title } onInput={ this.titleInput }></Input>
+            </FormItem>
 
-        <FormItem label="description">
-          <Input value={ this.state.stringSchema.description } onInput={ this.descriptionInput }></Input>
-        </FormItem>
+            <FormItem label="description">
+              <Input value={ this.state.stringSchema.description } onInput={ this.descriptionInput }></Input>
+            </FormItem>
 
-        <FormItem label="default">
-          <Input value={ this.state.stringSchemaAddition.default } onInput={ this.defaultInput }></Input>
-        </FormItem>
+            <FormItem label="default">
+              <Input value={ this.state.stringSchemaAddition.default } onInput={ this.defaultInput }></Input>
+            </FormItem>
 
-        <FormItem label="最小长度">
-          <Input value={ this.state.stringSchema.minLength } onInput={ this.minLengthInput }></Input>
-        </FormItem>
+            <FormItem label="最小长度">
+              <Input value={ this.state.stringSchema.minLength } onInput={ this.minLengthInput }></Input>
+            </FormItem>
 
-        <FormItem label="enum">
-          <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
-          <TextArea disabled={ !this.state.enumStatus } value={ this.state.stringSchemaAddition.enum } onChange={ this.enumInput }></TextArea>
-        </FormItem>
+            <FormItem label="enum">
+              <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
+              <TextArea disabled={ !this.state.enumStatus } value={ this.state.stringSchemaAddition.enum } onChange={ this.enumInput }></TextArea>
+            </FormItem>
 
-        <FormItem label="format">
-          <Checkbox checked={ this.state.formatStatus } onChange={ this.formatStatusChange }>使用format</Checkbox>
-          <Select allowClear disabled={ !this.state.formatStatus } value={ this.state.stringSchemaAddition.format } onChange={ this.formatTypeChange }>
+            <FormItem label="format">
+              <Checkbox checked={ this.state.formatStatus } onChange={ this.formatStatusChange }>使用format</Checkbox>
+              <Select allowClear disabled={ !this.state.formatStatus } value={ this.state.stringSchemaAddition.format } onChange={ this.formatTypeChange }>
+                {
+                  StringSchemaCreator.formatList.map((ele, index, arr) => {
+                    return <Option key={ ele + index } value={ ele }>{ ele }</Option>
+                  })
+                }
+              </Select>
+            </FormItem>
             {
-              StringSchemaCreator.formatList.map((ele, index, arr) => {
-                return <Option key={ ele + index } value={ ele }>{ ele }</Option>
-              })
+              !this.state.asDefinition &&
+              <FormItem label="设置ui">
+                <div className="nested-form-item">
+                  <StringUICreator ref={
+                    (uiCreator) => {
+                      this.uiCreator = uiCreator;
+                    }
+                  }></StringUICreator>
+                </div>
+              </FormItem>
             }
-          </Select>
-        </FormItem>
-
-        <FormItem label="设置ui">
-          <div className="nested-form-item">
-            <StringUICreator ref={
-              (uiCreator) => {
-                this.uiCreator = uiCreator;
-              }
-            }></StringUICreator>
           </div>
-        </FormItem>
+        }
 
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
