@@ -4,7 +4,8 @@ import React from 'react';
 import {
   Select,
   Form,
-  Checkbox
+  Checkbox,
+  Input
 } from 'antd';
 
 const Option = Select.Option;
@@ -77,11 +78,25 @@ class ArrayUICreator extends React.Component {
     });
   }
 
+  uiClassNameChang = (event) => {
+    let value = event.target.value;
+    this.setState((prevState, props) => {
+      return {
+        ui: {
+          ...prevState.ui,
+          className: value
+        }
+      }
+    });
+  }
   // * ------------
 
   render () {
     return (
       <>
+        <FormItem label = "className">
+          <Input value={ this.state.ui.className ? this.state.ui.className : '' } onInput={ this.uiClassNameChang }></Input>
+        </FormItem>
         <FormItem label="widget">
           <Select allowClear value={ this.state.ui.widget ? this.state.ui.widget : '' } onChange={ this.uiWidgetChange }>
             {

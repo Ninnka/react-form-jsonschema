@@ -20,7 +20,6 @@ class NumberUICreator extends React.Component {
       'text',
       'updown',
       'range',
-      'color',
       'radio'
     ]
   }
