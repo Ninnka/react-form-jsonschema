@@ -5,7 +5,7 @@ import React from 'react';
 import ObjectUICreator from '@components/SchemaCreator/UICreator/ObjectUICreator';
 
 // * 功能库
-import utilFund from '@utils/functions';
+import utilFunc from '@utils/functions';
 
 // * antd组件
 import {
@@ -216,13 +216,13 @@ class ObjectSchemaCreator extends React.Component {
     if (tmpItem.properties && Object.keys(tmpItem.properties).length > 0) {
       tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
     }
-    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
       tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
     }
-    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
       tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
     }
-    if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+    if (tmpItem.additionalItems && utilFunc.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
       tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
     }
     return tmpDefList;
@@ -506,7 +506,7 @@ class ObjectSchemaCreator extends React.Component {
 
   addSchemaDep = () => {
     let data = {
-      id: utilFund.createRandomId(),
+      id: utilFunc.createRandomId(),
       useOneOfDep: false,
       depItemOneOfList: [], // * need
       key: '', // * need
@@ -597,9 +597,18 @@ class ObjectSchemaCreator extends React.Component {
     this.setState((prevState, props) => {
       let data = [...prevState.schemaDepList];
       data[index].properties[newDep.key] = newDep;
+      data[index].newDep = {
+        key: '',
+        type: '',
+        description: ''
+      };
       return {
         schemaDepList: data
       }
+    }, () => {
+      utilFunc.messageSuccess({
+        message: '添加成功'
+      })
     })
   }
 
@@ -664,9 +673,17 @@ class ObjectSchemaCreator extends React.Component {
       data[index].newOneOfDep.properties[key] = {
         type: data[index].newOneOfDepProp.type
       };
+      data[index].newOneOfDepProp = {
+        type: '',
+        key: ''
+      };
       return {
         schemaDepList: data
       };
+    }, () => {
+      utilFunc.messageSuccess({
+        message: '添加成功'
+      })
     });
   }
 

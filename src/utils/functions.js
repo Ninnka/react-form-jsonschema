@@ -1,3 +1,5 @@
+import { message } from 'antd';
+
 export default {
   I64BIT_TABLE: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'.split(''),
   createHash: (input) => {
@@ -18,7 +20,7 @@ export default {
     do {
       retValue += this.I64BIT_TABLE[value & 0x3F];
     }
-    while(value >>= 6);
+    while(!!(value >>= 6));
 
     return retValue;
   },
@@ -35,5 +37,25 @@ export default {
   },
   getPropertyJsType: (property) => {
     return Object.prototype.toString.call(property);
+  },
+  messageSuccess: (param = {
+    message: '成功'
+  }) => {
+    message.success(param.message, () => {});
+  },
+  messageError: (param = {
+    message: '错误'
+  }) => {
+    message.error(param.message, () => {});
+  },
+  messageWarning: (param = {
+    message: '警告'
+  }) => {
+    message.warning(param.message, () => {});
+  },
+  messageInfo: (param = {
+    message: '信息'
+  }) => {
+    message.info(param.message, () => {});
   }
 }

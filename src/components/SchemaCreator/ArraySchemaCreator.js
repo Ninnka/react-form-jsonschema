@@ -6,7 +6,7 @@ import React from 'react';
 import ArrayUICreator from '@components/SchemaCreator/UICreator/ArrayUICreator';
 
 // * 功能库
-import utilFund from '@utils/functions';
+import utilFunc from '@utils/functions';
 
 import { cloneDeep } from 'lodash';
 
@@ -197,13 +197,13 @@ class ArraySchemaCreator extends React.Component {
       // if (item[1].properties) {
       //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, item[1].properties));
       // }
-      // if (item[1].items && utilFund.getPropertyJsType(item[1].items).indexOf('Object') !== -1) {
+      // if (item[1].items && utilFunc.getPropertyJsType(item[1].items).indexOf('Object') !== -1) {
       //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: item[1].items}));
       // }
-      // if (item[1].items && utilFund.getPropertyJsType(item[1].items).indexOf('Array') !== -1 && item[1].items.length > 0) {
+      // if (item[1].items && utilFunc.getPropertyJsType(item[1].items).indexOf('Array') !== -1 && item[1].items.length > 0) {
       //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, item[1].items));
       // }
-      // if (item[1].additionalItems && utilFund.getPropertyJsType(item[1].additionalItems).indexOf('Object') !== -1) {
+      // if (item[1].additionalItems && utilFunc.getPropertyJsType(item[1].additionalItems).indexOf('Object') !== -1) {
       //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: item[1].additionalItems}));
       // }
     }
@@ -229,13 +229,13 @@ class ArraySchemaCreator extends React.Component {
     // if (tmpItem.properties) {
     //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
     // }
-    // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+    // if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
     //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
     // }
-    // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+    // if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
     //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
     // }
-    // if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+    // if (tmpItem.additionalItems && utilFunc.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
     //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
     // }
     return tmpDefList;
@@ -263,13 +263,13 @@ class ArraySchemaCreator extends React.Component {
       // if (tmpItem.properties) {
       //   tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
       // }
-      // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+      // if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
       //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
       // }
-      // if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+      // if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
       //   tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
       // }
-      // if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+      // if (tmpItem.additionalItems && utilFunc.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
       //   tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
       // }
     }
@@ -287,13 +287,13 @@ class ArraySchemaCreator extends React.Component {
     if (tmpItem.properties && Object.keys(tmpItem.properties).length > 0) {
       tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
     }
-    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
       tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
     }
-    if (tmpItem.items && utilFund.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
       tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
     }
-    if (tmpItem.additionalItems && utilFund.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+    if (tmpItem.additionalItems && utilFunc.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
       tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
     }
     return tmpDefList;
@@ -883,8 +883,6 @@ class ArraySchemaCreator extends React.Component {
               }
             </FormItem>
 
-            <FormItem label="schema dependencies"></FormItem>
-
             <FormItem label="设置ui">
               <div className="nested-form-item">
                 <ArrayUICreator ref={
@@ -965,9 +963,7 @@ class ArraySchemaCreator extends React.Component {
                 this.state.fixedItemStatus &&
                 <div className="nested-form-item">
                   <FormItem label="选择需要删除的固定item">
-                    <Select style={ {
-                      width: '100%'
-                    } } onChange={ this.selectDeleteFixedItem } value={ this.state.fixedItemsList[this.state.fixItemSelected] ? this.state.fixedItemsList[this.state.fixItemSelected].title : '' }>
+                    <Select style={ { width: '100%' } } onChange={ this.selectDeleteFixedItem } value={ this.state.fixedItemsList[this.state.fixItemSelected] ? this.state.fixedItemsList[this.state.fixItemSelected].title : '' }>
                       {
                         this.state.fixedItemsList.map((ele, index) => {
                           return <Option key={ ele.type + ele.title + index } value={ index }>{ ele.title }</Option>

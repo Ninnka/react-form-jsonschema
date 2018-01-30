@@ -50,7 +50,7 @@
       - ui:options
         - label
         - inputType
-      - className
+      - classNames
   - number(integer)类型
     - 选择所属的对象
     - 设置title
@@ -79,20 +79,7 @@
       - ui:options
         - label
         - inputType
-      - className
-  - object类型
-    - 选择所属的对象
-    - 添加properties
-    - 设置key
-    - 设置title
-    - 设置description
-    - 设置default
-    - 设置required
-    - 选择ui
-      - ui:order
-      - ui:disabled
-      - ui:readonly
-    - className
+      - classNames
   - boolean类型
     - 选择所属的对象
     - 设置title
@@ -110,7 +97,20 @@
       - ui:options
         - label
         - inputType
-      - className
+      - classNames
+  - object类型
+    - 选择所属的对象
+    - 添加properties
+    - 设置key
+    - 设置title
+    - 设置description
+    - 设置default
+    - 设置required
+    - 选择ui
+      - ui:order
+      - ui:disabled
+      - ui:readonly
+    - classNames
   - array类型
     - 选择所属的对象
     - 设置title
@@ -133,7 +133,7 @@
         - removeable
       - ui:disabled
       - ui:readonly
-      - className
+      - classNames
   - Schema definitions and references
   - Property dependency
   - schema dependency
@@ -159,12 +159,19 @@
 
 ## Update Log
 
+### 2018-01-30
+
+- 新增Custom CSS class names功能
+- 完善预览生成的表单功能
+- 优化添加properties功能
+- 新增primitive类型的ui:options
+- 抽离message方法到utils库
+
 ### 2018-01-29
 
 - 完善schema dependency功能
 - 新增HTML5 Input Types功能
 - 新增Custom labels for enum fields功能
-- 新增Custom CSS class names功能
 
 ### 2018-01-28
 
