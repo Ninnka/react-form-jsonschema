@@ -38,6 +38,7 @@ class ObjectSchemaCreator extends React.Component {
       value: ''
     },
     newDependencies: [],
+    schemaDepList: [],
     objectSchema: {
       key: '',
       title: '',
@@ -252,6 +253,7 @@ class ObjectSchemaCreator extends React.Component {
         value: ''
       },
       newDependencies: [],
+      schemaDepList: [],
       objectSchema: {
         key: '',
         title: '',
@@ -290,13 +292,40 @@ class ObjectSchemaCreator extends React.Component {
       data.coverFixedItems = true;
     }
 
-    // * 判断是否应该加入依赖
+    // * 判断是否应该加入property依赖
     if (this.state.newDependencies.length > 0) {
       data.dependencies = {
         ...data.dependencies
-      }
+      };
       for (let item of this.state.newDependencies) {
         data.dependencies[item.key] = [...item.value];
+      }
+    }
+
+    // * 判断是否应该加入schema依赖
+    if (this.state.schemaDepList.length > 0) {
+      data.dependencies = {
+        ...data.dependencies
+      };
+      for (let item of this.state.schemaDepList) {
+        if (item.useOneOfDep) {
+          let tmpData = {
+            oneOf: []
+          };
+          data.dependencies[item.key] = tmpData;
+          for (let i of item.depItemOneOfList) {
+            tmpData.oneOf.push(i);
+          }
+        } else {
+          data.dependencies[item.key] = {
+            properties: {
+              ...item.properties
+            },
+            required: [
+              ...item.required
+            ]
+          }
+        }
       }
     }
 
@@ -475,6 +504,215 @@ class ObjectSchemaCreator extends React.Component {
 
   // * ------------
 
+  addSchemaDep = () => {
+    let data = {
+      id: utilFund.createRandomId(),
+      useOneOfDep: false,
+      depItemOneOfList: [], // * need
+      key: '', // * need
+      properties: {}, // * needz
+      required: [], // * need
+      newDep: {
+        key: '',
+        type: '',
+        description: ''
+      },
+      newOneOfDep: {
+        properties: {},
+        required: [],
+        enum: []
+      },
+      newOneOfDepProp: {
+        type: '',
+        key: ''
+      }
+    };
+    this.setState((prevState, props) => {
+      return {
+        schemaDepList: [
+          ...prevState.schemaDepList,
+          data
+        ]
+      }
+    });
+  }
+
+  delSchemaDep = (index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data.splice(index, 1);
+      return {
+        schemaDepList: data
+      }
+    });
+  }
+
+  depItemOriKeyInput = (event, index) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].key = tmpValue;
+      return {
+        schemaDepList: data
+      }
+    })
+  }
+
+  depItemOriRequiredChange = (event, index) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].required = tmpValue !== undefined ? tmpValue.split(',') : [];
+      return {
+        schemaDepList: data
+      }
+    })
+  }
+
+  depItemNewTypeChange = (value, index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newDep.type = value;
+      return {
+        schemaDepList: data
+      }
+    })
+  }
+
+  depItemNewValueChange = (event, key, index) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newDep[key] = tmpValue;
+      return {
+        schemaDepList: data
+      }
+    })
+  }
+
+  addSchemaDepItemProperty = (index, newDep) => {
+    if (this.state.schemaDepList[index].key === '') {
+      return '';
+    }
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].properties[newDep.key] = newDep;
+      return {
+        schemaDepList: data
+      }
+    })
+  }
+
+  delSchemaDepItemProperty = (index, key) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      delete data[index].properties[key]
+      return {
+        schemaDepList: data
+      }
+    })
+  }
+
+  depItemOneOfChange = (event, index) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].useOneOfDep = checked;
+      return {
+        schemaDepList: data
+      }
+    });
+  }
+
+  newOneOfDepAttrChange = (event, key, index) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newOneOfDep[key] = tmpValue.split(',');
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  depOneOfItemNewTypeChange = (value, index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newOneOfDepProp.type = value;
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  depOneOfItemNewKeyInput = (event, index) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].newOneOfDepProp.key = tmpValue;
+      return {
+        schemaDepList: data
+      };
+    })
+  }
+
+  addOneOfDepItemProperties = (index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      let key = data[index].newOneOfDepProp.key;
+
+      data[index].newOneOfDep.properties[key] = {
+        type: data[index].newOneOfDepProp.type
+      };
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  delOneOfDepItemProperties = (index, key) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      delete data[index].newOneOfDep.properties[key]
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  addOneOfListDepItem = (event, index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      let oriKey = data[index].key;
+
+      data[index].depItemOneOfList.push({
+        properties: {
+          [oriKey]: {
+            enum: data[index].newOneOfDep.enum
+          },
+          ...data[index].newOneOfDep.properties
+        },
+        required: data[index].newOneOfDep.required
+      });
+
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  delOneOfDepItem = (index) => {
+    this.setState((prevState, props) => {
+      let data = [...prevState.schemaDepList];
+      data[index].depItemOneOfList.splice(index, 1);
+      return {
+        schemaDepList: data
+      };
+    });
+  }
+
+  // * ------------
+
   asFixedItemsStatusChange = (event) => {
     let checked = event.target.checked;
     this.setState({
@@ -594,7 +832,7 @@ class ObjectSchemaCreator extends React.Component {
 
             <FormItem label="properties dependencies">
               <div>
-              <div>
+                <div>
                   <span>依赖对象</span>
                   <Input value={ this.state.newDep.key } onChange={ (e) => {
                     this.dependenciesInput(e, 'key')
@@ -630,7 +868,160 @@ class ObjectSchemaCreator extends React.Component {
               }
             </FormItem>
 
-            <FormItem label="schema dependencies"></FormItem>
+            <FormItem label="schema dependencies">
+              <div>
+                {
+                  this.state.schemaDepList.map((ele, index, arr) => {
+                    return (
+                      <div key={ ele.id } className="flex-lfix diving-line">
+                        <Button type="danger" className="mg-top-middle" onClick={ () => {
+                          this.delSchemaDep(index)
+                        } }>删除</Button>
+                        <div className="flex-item-grow mg-left-middle">
+                          <Checkbox checked={ ele.useOneOfDep } onChange={ (e) => {
+                            this.depItemOneOfChange(e, index)
+                          } }>oneOf模式</Checkbox>
+
+                          <FormItem label="依赖者的key">
+                            <Input value={ ele.key } onChange={ (e) => {
+                              this.depItemOriKeyInput(e, index)
+                            } }></Input>
+                          </FormItem>
+
+                          { !ele.useOneOfDep &&
+                            <div>
+                              <FormItem label="依赖者的required">
+                                <Input value={ ele.required ? ele.required.join(',') : '' } onChange={ (e) => {
+                                  this.depItemOriRequiredChange(e, index)
+                                } }></Input>
+                              </FormItem>
+
+                              <div style={ { boxSizing: 'border-box', paddingLeft: '36px', marginBottom: '16px' } }>
+                                <FormItem label="type">
+                                  <Select allowClear value={ ele.newDep.type } onChange={ (value) => {
+                                    this.depItemNewTypeChange(value, index)
+                                  } }>
+                                    <Option value="string">string</Option>
+                                    <Option value="number">number</Option>
+                                    <Option value="integer">integer</Option>
+                                    <Option value="boolean">boolean</Option>
+                                  </Select>
+                                </FormItem>
+                                <FormItem label="被依赖者的key">
+                                  <Input value={ ele.newDep.key } onChange={ (e) => {
+                                    this.depItemNewValueChange(e, 'key', index)
+                                  } }></Input>
+                                </FormItem>
+                                <FormItem label="被依赖者的description">
+                                  <Input value={ ele.newDep.description } onChange={ (e) => {
+                                    this.depItemNewValueChange(e, 'description', index)
+                                  } }></Input>
+                                </FormItem>
+                                <Button type="primary" onClick={ () => {
+                                  this.addSchemaDepItemProperty(index, ele.newDep)
+                                } }>添加properties</Button>
+                                {
+                                  ele.properties &&
+                                  Object.entries(ele.properties).map((item, i, arr) => {
+                                    return (
+                                      <div key={ item[1].key } className="flex-lfix mg-top-thin" style={ {lineHeight: '32px'} }>
+                                        <Button type="danger" onClick={ (e) => {
+                                          this.delSchemaDepItemProperty(index, item[0])
+                                        } }>删除</Button>
+                                        <div className="mg-left-middle">
+                                          <span style={ {color: 'red'} }>{ item[0] + ':  ' }</span>
+                                          <span>{ JSON.stringify(item[1]) }</span>
+                                        </div>
+                                      </div>
+                                    )
+                                  })
+                                }
+                              </div>
+                            </div>
+                          }
+
+                          { ele.useOneOfDep &&
+                            <div>
+                              <div>
+                                <FormItem label="required">
+                                  <TextArea value={ ele.newOneOfDep.required ? ele.newOneOfDep.required.join(',') : '' } onChange={ (e) => {
+                                    this.newOneOfDepAttrChange(e, 'required', index)
+                                  } }></TextArea>
+                                </FormItem>
+                                <FormItem label="enum">
+                                  <TextArea value={ ele.newOneOfDep.enum ? ele.newOneOfDep.enum.join(',') : '' } onChange={ (e) => {
+                                    this.newOneOfDepAttrChange(e, 'enum', index)
+                                  } }></TextArea>
+                                </FormItem>
+                                <FormItem label="properties">
+                                  <div className="borderbox-padleft">
+                                    <FormItem label="type">
+                                      <Select allowClear value={ ele.newOneOfDepProp.type } onChange={ (value) => {
+                                        this.depOneOfItemNewTypeChange(value, index)
+                                      } }>
+                                        <Option value="string">string</Option>
+                                        <Option value="number">number</Option>
+                                        <Option value="integer">integer</Option>
+                                        <Option value="boolean">boolean</Option>
+                                      </Select>
+                                    </FormItem>
+                                    <FormItem label="key">
+                                      <Input value={ ele.newOneOfDepProp.key } onChange={ (e) => {
+                                        this.depOneOfItemNewKeyInput(e, index)
+                                      } }></Input>
+                                    </FormItem>
+                                    <Button type="primary" onClick={ () => {
+                                      this.addOneOfDepItemProperties(index)
+                                    } }>添加properties</Button>
+                                    {
+                                      ele.newOneOfDep && ele.newOneOfDep.properties &&
+                                      Object.entries(ele.newOneOfDep.properties).map((item, i) => {
+                                        return (
+                                          <div key={ i } className="flex-lfix">
+                                            <Button type="danger" onClick={ () => {
+                                              this.delOneOfDepItemProperties(index, item[0])
+                                            } }>删除</Button>
+                                            <div className="mg-left-middle">
+                                              <span style={ {color: 'red'} }>{ item[0] + ':  ' }</span>
+                                              <span>{ JSON.stringify(item[1]) }</span>
+                                            </div>
+                                          </div>
+                                        )
+                                      })
+                                    }
+                                    <div></div>
+                                  </div>
+                                </FormItem>
+                              </div>
+                              <Button type="primary" style={ { marginBottom: '12px' } } onClick={ (e) => {
+                                this.addOneOfListDepItem(e, index)
+                              } }>确认创建oneOf的item</Button>
+                              {
+                                ele.depItemOneOfList && ele.depItemOneOfList.length > 0 &&
+                                ele.depItemOneOfList.map((item, i, arr) => {
+                                  return (
+                                    <div key={ i } className="flex-lfix">
+                                      <Button type="danger" onClick={ () => {
+                                        this.delOneOfDepItem(index)
+                                      } }>删除</Button>
+                                      <div className="mg-left-middle">
+                                        <span style={ {color: 'red'} }>{ JSON.stringify(item) }</span>
+                                      </div>
+                                    </div>
+                                  )
+                                })
+                              }
+                            </div>
+                          }
+
+                        </div>
+                      </div>
+                    )
+                  })
+                }
+                <Button type="primary" className="mg-top-middle" onClick={ this.addSchemaDep }>添加Schema Dependency</Button>
+              </div>
+            </FormItem>
 
             <FormItem label="设置ui">
               <div className="nested-form-item">

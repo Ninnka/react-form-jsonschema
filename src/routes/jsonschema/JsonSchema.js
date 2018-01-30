@@ -11,6 +11,8 @@ import NumberSchemaCreator from '@components/SchemaCreator/NumberSchemaCreator';
 import BooleanSchemaCreator from '@components/SchemaCreator/BooleanSchemaCreator';
 import ArraySchemaCreator from '@components/SchemaCreator/ArraySchemaCreator';
 
+import PreviewForm from '@components/FormCreator/PreviewForm';
+
 // * antd组件
 import {
   Tabs,
@@ -568,6 +570,9 @@ class JsonSchema extends React.Component {
                 this.addNewDefinition
               }></ArraySchemaCreator>
             </div>
+          </TabPane>
+          <TabPane tab="表单预览" key="6">
+            <PreviewForm></PreviewForm>
           </TabPane>
         </Tabs>
       </div>
