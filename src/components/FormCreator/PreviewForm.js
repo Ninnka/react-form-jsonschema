@@ -16,21 +16,7 @@ class PreviewForm extends React.Component {
     console.log('JSONSchema:', nextProps.JSONSchema);
     console.log('UISchema:', nextProps.UISchema);
     console.log('FormData:', nextProps.FormData);
-    let data = null;
-    if (nextProps.JSONSchema.type === 'object') {
-      data = {
-        ...nextProps.FormData
-      };
-    } else if (nextProps.JSONSchema.type === 'array') {
-      data = [
-        ...nextProps.FormData
-      ]
-    } else {
-      data = '';
-    }
-    this.setState({
-      FormData: data
-    });
+    this.prepareData(nextProps);
   }
 
   componentDidMount () {
@@ -38,14 +24,20 @@ class PreviewForm extends React.Component {
     console.log('JSONSchema:', this.props.JSONSchema);
     console.log('UISchema:', this.props.UISchema);
     console.log('FormData:', this.props.FormData);
+    this.prepareData(this.props);
+  }
+
+  // * ------------
+
+  prepareData = (props) => {
     let data = null;
-    if (this.props.JSONSchema.type === 'object') {
+    if (props.JSONSchema.type === 'object') {
       data = {
-        ...this.props.FormData
+        ...props.FormData
       };
-    } else if (this.props.JSONSchema.type === 'array') {
+    } else if (props.JSONSchema.type === 'array') {
       data = [
-        ...this.props.FormData
+        ...props.FormData
       ]
     } else {
       data = '';
@@ -62,7 +54,8 @@ class PreviewForm extends React.Component {
       <div className="borderbox padding-middle">
         <Form schema={ this.props.JSONSchema }
               uiSchema={ this.props.UISchema }
-              formData={ this.state.FormData }/>
+              formData={ this.state.FormData }
+              liveValidate={ true }/>
       </div>
     )
   }

@@ -113,7 +113,7 @@ class ArrayUICreator extends React.Component {
 
         <FormItem label="options">
 
-          <Checkbox checked={ this.state.uiOptions.orderable !== undefined ? this.state.uiOptions.orderable : false } onChange={ (event) => {
+          <Checkbox checked={ this.state.uiOptions.orderable !== undefined ? !this.state.uiOptions.orderable : false } onChange={ (event) => {
             this.uiOptionsChange({
               key: 'orderable',
               value: !(event.target.checked)
@@ -121,7 +121,7 @@ class ArrayUICreator extends React.Component {
           } }>
             禁止数组成员排序
           </Checkbox>
-          <Checkbox checked={ this.state.uiOptions.addable !== undefined ? this.state.uiOptions.addable : false } onChange={ (event) => {
+          <Checkbox checked={ this.state.uiOptions.addable !== undefined ? !this.state.uiOptions.addable : false } onChange={ (event) => {
             this.uiOptionsChange({
               key: 'addable',
               value: !(event.target.checked)
@@ -129,7 +129,7 @@ class ArrayUICreator extends React.Component {
           } }>
             禁止添加数组成员
           </Checkbox>
-          <Checkbox checked={ this.state.uiOptions.removeable !== undefined ? this.state.uiOptions.removeable : false } onChange={ (event) => {
+          <Checkbox checked={ this.state.uiOptions.removeable !== undefined ? !this.state.uiOptions.removeable : false } onChange={ (event) => {
             this.uiOptionsChange({
               key: 'removeable',
               value: !(event.target.checked)
