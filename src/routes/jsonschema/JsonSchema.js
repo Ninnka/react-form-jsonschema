@@ -8,7 +8,7 @@ import utilFunc from '@utils/functions';
 
 import withCompuListHighOrder from '@utils/withCompuListHighOrder';
 
-import { cloneDeep } from 'lodash';
+import { cloneDeep, isEqual } from 'lodash';
 
 import ObjectSchemaCreator from '@components/SchemaCreator/ObjectSchemaCreator';
 import StringSchemaCreator from '@components/SchemaCreator/StringSchemaCreator';
@@ -504,6 +504,24 @@ class JsonSchema extends React.Component {
     });
   }
 
+  editJsonSchemaData = (param) => {
+    console.log('editJsonSchemaData param', param);
+    if (!isEqual(this.state.JSONSchema, param.updated_src)) {
+      this.setState({
+        JSONSchema: param.updated_src
+      })
+    }
+  }
+
+  deleteJsonSchemaData = (param) => {
+    console.log('editJsonSchemaData param', param);
+    if (!isEqual(this.state.JSONSchema, param.updated_src)) {
+      this.setState({
+        JSONSchema: param.updated_src
+      })
+    }
+  }
+
   // * ------------
 
   render () {
@@ -512,17 +530,6 @@ class JsonSchema extends React.Component {
         <Tabs defaultActiveKey="1" onChange={this.tabsChange}>
           <TabPane tab="创建Object" key="1">
             <div className={ styles.jsonSchemaTabPane }>
-              {/* <ObjectSchemaCreator properties={
-                this.state.JSONSchema.properties
-              } addNewProperties={
-                this.addNewProperties
-              } jsonSchema={
-                this.state.JSONSchema
-              } definitions={
-                this.state.JSONSchema.definitions
-              } addNewDefinition={
-                this.addNewDefinition
-              }></ObjectSchemaCreator> */}
               <ObjectSchemaCreatorHOC properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
@@ -533,22 +540,11 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></ObjectSchemaCreatorHOC>
+              } />
             </div>
           </TabPane>
           <TabPane tab="创建String" key="2">
             <div className={ styles.jsonSchemaTabPane }>
-              {/* <StringSchemaCreator properties={
-                this.state.JSONSchema.properties
-              } addNewProperties={
-                this.addNewProperties
-              } jsonSchema={
-                this.state.JSONSchema
-              } definitions={
-                this.state.JSONSchema.definitions
-              } addNewDefinition={
-                this.addNewDefinition
-              }></StringSchemaCreator> */}
               <StringSchemaCreatorHOC properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
@@ -559,22 +555,11 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></StringSchemaCreatorHOC>
+              } />
             </div>
           </TabPane>
           <TabPane tab="创建Number" key="3">
             <div className={ styles.jsonSchemaTabPane }>
-              {/* <NumberSchemaCreator properties={
-                this.state.JSONSchema.properties
-              } addNewProperties={
-                this.addNewProperties
-              } jsonSchema={
-                this.state.JSONSchema
-              } definitions={
-                this.state.JSONSchema.definitions
-              } addNewDefinition={
-                this.addNewDefinition
-              }></NumberSchemaCreator> */}
               <NumberSchemaCreatorHOC properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
@@ -585,22 +570,11 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></NumberSchemaCreatorHOC>
+              } />
             </div>
           </TabPane>
           <TabPane tab="创建Boolean" key="4">
             <div className={ styles.jsonSchemaTabPane }>
-              {/* <BooleanSchemaCreator properties={
-                this.state.JSONSchema.properties
-              } addNewProperties={
-                this.addNewProperties
-              } jsonSchema={
-                this.state.JSONSchema
-              } definitions={
-                this.state.JSONSchema.definitions
-              } addNewDefinition={
-                this.addNewDefinition
-              }></BooleanSchemaCreator> */}
               <BooleanSchemaCreatorHOC properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
@@ -611,21 +585,10 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></BooleanSchemaCreatorHOC>
+              } />
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
             <div className={ styles.jsonSchemaTabPane }>
-              {/* <ArraySchemaCreator properties={
-                this.state.JSONSchema.properties
-              } addNewProperties={
-                this.addNewProperties
-              } jsonSchema={
-                this.state.JSONSchema
-              } definitions={
-                this.state.JSONSchema.definitions
-              } addNewDefinition={
-                this.addNewDefinition
-              }></ArraySchemaCreator> */}
               <ArraySchemaCreatorHOC properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
@@ -636,7 +599,7 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></ArraySchemaCreatorHOC>
+              } />
             </div>
           </TabPane>
           <TabPane tab="数据预览" key="6">
@@ -646,7 +609,11 @@ class JsonSchema extends React.Component {
               this.state.UISchema
             } FormData={
               this.state.FormData
-            }></DataPreview>
+            } editJsonSchemaData={
+              this.editJsonSchemaData
+            } deleteJsonSchemaData={
+              this.deleteJsonSchemaData
+            } />
           </TabPane>
           <TabPane tab="表单预览" key="7">
             <PreviewForm JSONSchema={
@@ -655,7 +622,7 @@ class JsonSchema extends React.Component {
               this.state.UISchema
             } FormData={
               this.state.FormData
-            }></PreviewForm>
+            } />
           </TabPane>
         </Tabs>
       </div>

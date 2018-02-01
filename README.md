@@ -161,7 +161,8 @@
 
 ### 2018-02-01
 
-- 增加数据预览功能的雏形
+- 数据预览增加编辑功能和删除功能
+- 增加数据预览功能
 - 增加SchemaCreator的High-Order组件
 - 使用SchemaCreatorHOC返回object和array的表单构造器
 - 根目录的名称有global改为root

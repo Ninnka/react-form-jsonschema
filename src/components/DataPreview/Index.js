@@ -19,13 +19,18 @@ class DataPreview extends React.Component {
       <div className="borderbox" style={ { padding: '0 24px 24px' } }>
         <Tabs>
           <TabPane tab="jsonschema" key="1">
-            <PreviewJsonSchema JSONSchema={ this.props.JSONSchema }></PreviewJsonSchema>
+            <PreviewJsonSchema JSONSchema={ this.props.JSONSchema }
+                               editJsonSchemaData={ this.props.editJsonSchemaData }
+                               deleteJsonSchemaData={ this.props.deleteJsonSchemaData } />
           </TabPane>
           <TabPane tab="uischema" key="2">
-            <PreviewUISchema UISchema={ this.props.UISchema }></PreviewUISchema>
+            <PreviewUISchema UISchema={ this.props.UISchema }
+                             editJsonSchemaData={ this.props.editJsonSchemaData }
+                             deleteJsonSchemaData={ this.props.deleteJsonSchemaData } />
           </TabPane>
           <TabPane tab="formdata" key="3">
-            <PreviewFormData FormData={ this.props.FormData }></PreviewFormData>
+            <PreviewFormData FormData={ this.props.FormData }
+                             deleteJsonSchemaData={ this.props.deleteJsonSchemaData } />
           </TabPane>
         </Tabs>
       </div>
