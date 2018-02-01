@@ -159,6 +159,14 @@
 
 ## Change Log
 
+### 2018-02-01
+
+- 增加数据预览功能的雏形
+- 增加SchemaCreator的High-Order组件
+- 使用SchemaCreatorHOC返回object和array的表单构造器
+- 根目录的名称有global改为root
+- 删除无用的文件
+
 ### 2018-01-31
 
 - array类型的schema构造器加入minItems设置

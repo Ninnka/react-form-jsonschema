@@ -6,6 +6,8 @@ import styles from './JsonSchema.less';
 // * 功能库
 import utilFunc from '@utils/functions';
 
+import withCompuListHighOrder from '@utils/withCompuListHighOrder';
+
 import { cloneDeep } from 'lodash';
 
 import ObjectSchemaCreator from '@components/SchemaCreator/ObjectSchemaCreator';
@@ -16,12 +18,17 @@ import ArraySchemaCreator from '@components/SchemaCreator/ArraySchemaCreator';
 
 import PreviewForm from '@components/FormCreator/PreviewForm';
 
+import DataPreview from '@components/DataPreview/Index';
+
 // * antd组件
 import {
   Tabs
 } from 'antd';
 
 const TabPane = Tabs.TabPane;
+
+const ObjectSchemaCreatorHOC = withCompuListHighOrder(ObjectSchemaCreator);
+const ArraySchemaCreatorHOC = withCompuListHighOrder(ArraySchemaCreator);
 
 class JsonSchema extends React.Component {
 
@@ -253,20 +260,20 @@ class JsonSchema extends React.Component {
 
     for (let item of ownerList) {
       if (
-        item !== 'global'
+        item !== 'root'
         && tmpProperties[item]
       ) {
         tmpProperties = tmpProperties[item];
 
       } else if (
-        item !== 'global'
+        item !== 'root'
         && tmpProperties.type === 'object'
         && tmpProperties.properties[item]
       ) {
         tmpProperties = tmpProperties.properties[item];
 
       } else if (
-        item !== 'global'
+        item !== 'root'
         && tmpProperties.type === 'array'
         && tmpProperties[item]
       ) {
@@ -275,14 +282,14 @@ class JsonSchema extends React.Component {
 
       // * ui相关start---------------
       // * 创建ui对象路径
-      item !== 'global' && !useUISchema[item] && (useUISchema[item] = {});
-      item !== 'global' && (useUISchema = useUISchema[item]);
+      item !== 'root' && !useUISchema[item] && (useUISchema[item] = {});
+      item !== 'root' && (useUISchema = useUISchema[item]);
       // * ui相关end---------------
 
       // * formData相关start------------
       // * 创建tmpProperties对应的formData
       let jsType = utilFunc.getPropertyJsType(useFormData);
-      if (item !== 'global' && !useFormData[item]) {
+      if (item !== 'root' && !useFormData[item]) {
         let tmpD = tmpProperties.type === 'array' ? [] : {};
         // * 如果useFormData是数组，则添加一个对象进去
         if (jsType.indexOf('Array') !== -1) {
@@ -294,7 +301,7 @@ class JsonSchema extends React.Component {
         // * 如果useFormData是对象，则按照通常方法创造子对象
         jsType.indexOf('Object') !== -1 && !useFormData[item] && (useFormData[item] = tmpD);
       }
-      item !== 'global' && (useFormData = useFormData[item]);
+      item !== 'root' && (useFormData = useFormData[item]);
       // * formData相关end------------
     }
 
@@ -302,7 +309,7 @@ class JsonSchema extends React.Component {
     // * 设置ui最终位置的js类型与key名
     if (tmpProperties.type === 'object'
     || (ownerList.length === 1 && ownerList[0] === '')
-    || (ownerList.length === 1 && ownerList[0] === 'global' && this.state.JSONSchema.type === 'object')) {
+    || (ownerList.length === 1 && ownerList[0] === 'root' && this.state.JSONSchema.type === 'object')) {
       useUISchema[newProperty.key] = {
         ...useUISchema[newProperty.key]
       };
@@ -487,6 +494,10 @@ class JsonSchema extends React.Component {
           ...useDefObj
         }
       };
+    }, () => {
+      utilFunc.messageSuccess({
+        message: '添加definitions成功'
+      });
     });
   }
 
@@ -498,7 +509,7 @@ class JsonSchema extends React.Component {
         <Tabs defaultActiveKey="1" onChange={this.tabsChange}>
           <TabPane tab="创建Object" key="1">
             <div className={ styles.jsonSchemaTabPane }>
-              <ObjectSchemaCreator properties={
+              {/* <ObjectSchemaCreator properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
@@ -508,7 +519,18 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></ObjectSchemaCreator>
+              }></ObjectSchemaCreator> */}
+              <ObjectSchemaCreatorHOC properties={
+                this.state.JSONSchema.properties
+              } addNewProperties={
+                this.addNewProperties
+              } jsonSchema={
+                this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
+              }></ObjectSchemaCreatorHOC>
             </div>
           </TabPane>
           <TabPane tab="创建String" key="2">
@@ -557,7 +579,7 @@ class JsonSchema extends React.Component {
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
             <div className={ styles.jsonSchemaTabPane }>
-              <ArraySchemaCreator properties={
+              {/* <ArraySchemaCreator properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
@@ -567,10 +589,30 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></ArraySchemaCreator>
+              }></ArraySchemaCreator> */}
+              <ArraySchemaCreatorHOC properties={
+                this.state.JSONSchema.properties
+              } addNewProperties={
+                this.addNewProperties
+              } jsonSchema={
+                this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
+              }></ArraySchemaCreatorHOC>
             </div>
           </TabPane>
-          <TabPane tab="表单预览" key="6">
+          <TabPane tab="数据预览" key="6">
+            <DataPreview JSONSchema={
+              this.state.JSONSchema
+            } UISchema={
+              this.state.UISchema
+            } FormData={
+              this.state.FormData
+            }></DataPreview>
+          </TabPane>
+          <TabPane tab="表单预览" key="7">
             <PreviewForm JSONSchema={
               this.state.JSONSchema
             } UISchema={

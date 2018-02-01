@@ -51,7 +51,7 @@ class PreviewForm extends React.Component {
 
   render () {
     return (
-      <div className="borderbox padding-middle">
+      <div className="borderbox padding-middle" style={ { paddingTop: "12px" } }>
         <Form schema={ this.props.JSONSchema }
               uiSchema={ this.props.UISchema }
               formData={ this.state.FormData }

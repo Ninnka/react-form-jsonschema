@@ -54,192 +54,27 @@ class ObjectSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
-    this.compuListPrepare(nextProps);
+    // this.compuListPrepare(nextProps);
+    let res = nextProps.compuListPrepare(nextProps);
+    this.setState({
+      ownerList: res.ownerList,
+      defList: res.defList,
+      refList: res.refList
+    });
   }
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
-    this.compuListPrepare(this.props);
-  }
-
-  // * ------------
-
-  compuListPrepare = (props) => {
-    let tmpOwnerList = [];
-    if (props.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', props.properties));
-    } else if (props.jsonSchema && props.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', props.jsonSchema]);
-    }
-    let tmpDefList = [];
-    if (props.definitions) {
-      tmpDefList = this.compuDefList('', props.definitions);
-    }
-    let tmpRefList = [];
-    for (let index = 0; index < tmpDefList.length; index++) {
-      let tmpList = tmpDefList[index].path.split('~/~');
-      if (tmpList.length > 0 && tmpList[tmpList.length - 1] !== 'definitions') {
-        tmpRefList.push(tmpDefList[index]);
-      }
-    }
+    // this.compuListPrepare(this.props);
+    let res = this.props.compuListPrepare(this.props);
     this.setState({
-      ownerList: tmpOwnerList,
-      defList: tmpDefList,
-      refList: tmpRefList
+      ownerList: res.ownerList,
+      defList: res.defList,
+      refList: res.refList
     });
-  }
-
-  compuOwnerList = (path, properties) => {
-    let tmpOwnerList = [];
-    let propertiesEntryList = Object.entries(properties);
-    for (let item of propertiesEntryList) {
-      if (item[1].type === 'object') {
-        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
-      } else if (item[1].type === 'array') {
-        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
-      }
-    }
-    return tmpOwnerList;
-  }
-
-  compuOwnerListObject = (path, item, exclude = false) => {
-    let tmpOwnerList = [];
-    !exclude && tmpOwnerList.push({
-      path: (path + '~/~' + item[0]).replace(/(^~\/~)|(~\/~$)/g, ''),
-      type: 'object'
-    });
-    tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
-    return tmpOwnerList;
-  }
-
-  compuOwnerListArray = (path, item, exclude = false) => {
-    let tmpOwnerList = [];
-    let tmpPath = path + '~/~' + item[0];
-    !exclude && tmpOwnerList.push({
-      path: tmpPath.replace(/(^~\/~)|(~\/~$)/g, ''),
-      type: 'array'
-    });
-    if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
-      let len = item[1].items.length;
-      for (let i = 0; i < len; i++) {
-        let tarr = this.compuOwnerListHelper(tmpPath, ['items~/~' + i, item[1].items[i]]);
-        tmpOwnerList = tmpOwnerList.concat(tarr);
-      }
-      if (item[1].additionalItems && item[1].additionalItems.type !== undefined) {
-        let tarr = this.compuOwnerListHelper(tmpPath, ['additionalItems', item[1].additionalItems]);
-        tmpOwnerList = tmpOwnerList.concat(tarr);
-      }
-    } else if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Object') !== -1) {
-      let tarr = this.compuOwnerListHelper(tmpPath, ['items', item[1].items]);
-      tmpOwnerList = tmpOwnerList.concat(tarr);
-    }
-    return tmpOwnerList;
-  }
-
-  compuOwnerListHelper = (path, item) => {
-    let tmpOwnerList = [];
-    if (item[1].type === 'object') {
-      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
-    } else if (item[1].type === 'array') {
-      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
-    }
-    return tmpOwnerList;
   }
 
   // * ------------
-
-  compuDefList = (path, item) => {
-    // console.log('compuDefList');
-    let tmpDefList = [];
-
-    let prePath = path ? path + '~/~definitions' : 'definitions';
-    tmpDefList.push({
-      path: prePath,
-      type: 'object'
-    });
-
-    let defEntriesList = Object.entries(item);
-    // console.log('defEntriesList', defEntriesList);
-
-    for (let item of defEntriesList) {
-      let tmpPath = prePath + '~/~' + item[0];
-      tmpDefList.push({
-        path: tmpPath,
-        type: 'object'
-      });
-      tmpDefList = this.compuDefListPure(tmpPath, item[1], tmpDefList);
-    }
-    return tmpDefList;
-  }
-
-  compuDefListObj = (path, param) => {
-    console.log('compuDefListObj');
-    let tmpDefList = [];
-
-    let prePath = path ? path + '~/~definitions' : 'definitions';
-    let tmpPath = prePath + '~/~' + param.key;
-    console.log('tmpPath', tmpPath);
-    tmpDefList.push({
-      path: tmpPath,
-      type: 'object'
-    });
-    tmpDefList = this.compuDefListPure(tmpPath, param.item, tmpDefList);
-    return tmpDefList;
-  }
-
-  compuDefListArray = (path, item) => {
-    console.log('compuDefListArray');
-    let tmpDefList = [];
-
-    let prePath = path + '~/~items';
-    let len = item.length;
-    for (let i = 0; i < len; i++) {
-      let tmpPath = prePath + '~/~' + i;
-      tmpDefList.push({
-        path: tmpPath,
-        type: 'object'
-      });
-      console.log('item[i]', item[i]);
-      tmpDefList = this.compuDefListPure(tmpPath, item[i], tmpDefList);
-    }
-    return tmpDefList;
-  }
-
-  compuDefListPure = (path, item, list) => {
-    let tmpDefList = list;
-    let tmpPath = path;
-    let tmpItem = item;
-
-    if (tmpItem.definitions) {
-      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
-    }
-    if (tmpItem.properties && Object.keys(tmpItem.properties).length > 0) {
-      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
-    }
-    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
-      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
-    }
-    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
-      tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
-    }
-    if (tmpItem.additionalItems && utilFunc.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
-      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
-    }
-    return tmpDefList;
-  }
-
-  // * ------------
-
-  showConfirm = () => {
-    confirm({
-      title: '提示',
-      content: '所属对象为空时将会覆盖根目录对象中的属性',
-      onOk: () => {
-        this.submitForm();
-      },
-      onCancel: () => {}
-    });
-  }
 
   resetForm = () => {
     this.setState({
@@ -269,8 +104,22 @@ class ObjectSchemaCreator extends React.Component {
     });
   }
 
+  showConfirm = () => {
+    confirm({
+      title: '提示',
+      content: '所属对象为空时将会覆盖根目录对象中的属性',
+      onOk: () => {
+        this.submitForm();
+      },
+      onCancel: () => {}
+    });
+  }
+
   confirmForm = () => {
     if (!this.state.objectSchema.key) {
+      utilFunc.messageWarning({
+        message: 'key值不能为空'
+      });
       return;
     }
     if (this.state.objectSchema.owner || this.state.asDefinition) {
@@ -309,31 +158,35 @@ class ObjectSchemaCreator extends React.Component {
       };
       for (let item of this.state.schemaDepList) {
         if (item.useOneOfDep) {
+          // * 创建的schema dependency使用的是oneOf模式
           let tmpData = {
             oneOf: []
           };
-          data.dependencies[item.key] = tmpData;
+          item.key && (data.dependencies[item.key] = tmpData);
           for (let i of item.depItemOneOfList) {
             tmpData.oneOf.push(i);
           }
         } else {
-          data.dependencies[item.key] = {
+          // * 创建的schema dependency使用的是一般模式
+          item.key && (data.dependencies[item.key] = {
             properties: {
               ...item.properties
             },
             required: [
               ...item.required
             ]
-          }
+          })
         }
       }
     }
 
     if (this.state.asDefinition) {
+      // * 作为一个新的definition
       delete data.$ref;
       this.props.addNewDefinition(data);
     } else if (this.state.refStatus) {
-      let tmpData= {
+      // * 引用了definition
+      let tmpData = {
         owner: data.owner,
         $ref: data.$ref,
         key: data.key,
@@ -341,6 +194,7 @@ class ObjectSchemaCreator extends React.Component {
       }
       tmpData.$ref && this.props.addNewProperties(tmpData);
     } else {
+      // * 正常模式
       delete data.$ref;
       // * 如果有设置ui，则将ui添加到UISchema
       if (Object.keys(this.uiCreator.state.ui).length > 0) {
@@ -785,17 +639,9 @@ class ObjectSchemaCreator extends React.Component {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (
                     <Option key={ ele.path + index } value={ index }>
-                      <div style={ {
-                        position: 'relative'
-                      } }>
-                        <span style={ {
-                          position: 'absolute',
-                          top: '0',
-                          left: '0'
-                        } }>{ ele.type + ' : ' }</span>
-                        <span style={ {
-                          marginLeft: '70px'
-                        } }>{ ele.path }</span>
+                      <div style={ { position: 'relative' } }>
+                        <span style={ { position: 'absolute', top: '0', left: '0' } }>{ ele.type + ' : ' }</span>
+                        <span style={ { marginLeft: '70px' } }>{ ele.path }</span>
                       </div>
                     </Option>
                   )
@@ -870,13 +716,8 @@ class ObjectSchemaCreator extends React.Component {
                       <Button type="danger" onClick={ () => {
                         this.deleteDep(ele.key);
                       } }>删除</Button>
-                      <div style={ {
-                        marginLeft: '24px',
-                        lineHeight: '32px'
-                      } }>
-                        <span style={ {
-                          color: 'red'
-                        } }>{ ele.key + ': '}</span>
+                      <div style={ { marginLeft: '24px', lineHeight: '32px' } }>
+                        <span style={ { color: 'red' } }>{ ele.key + ': '}</span>
                         <span>{ ele.value.join(',') }</span>
                       </div>
                     </div>
@@ -937,16 +778,15 @@ class ObjectSchemaCreator extends React.Component {
                                 <Button type="primary" onClick={ () => {
                                   this.addSchemaDepItemProperty(index, ele.newDep)
                                 } }>添加properties</Button>
-                                {
-                                  ele.properties &&
+                                { ele.properties &&
                                   Object.entries(ele.properties).map((item, i, arr) => {
                                     return (
-                                      <div key={ item[1].key } className="flex-lfix mg-top-thin" style={ {lineHeight: '32px'} }>
+                                      <div key={ item[1].key } className="flex-lfix mg-top-thin" style={ { lineHeight: '32px' } }>
                                         <Button type="danger" onClick={ (e) => {
                                           this.delSchemaDepItemProperty(index, item[0])
                                         } }>删除</Button>
                                         <div className="mg-left-middle">
-                                          <span style={ {color: 'red'} }>{ item[0] + ':  ' }</span>
+                                          <span style={ { color: 'red' } }>{ item[0] + ':  ' }</span>
                                           <span>{ JSON.stringify(item[1]) }</span>
                                         </div>
                                       </div>
