@@ -29,6 +29,9 @@ const TabPane = Tabs.TabPane;
 
 const ObjectSchemaCreatorHOC = withCompuListHighOrder(ObjectSchemaCreator);
 const ArraySchemaCreatorHOC = withCompuListHighOrder(ArraySchemaCreator);
+const StringSchemaCreatorHOC = withCompuListHighOrder(StringSchemaCreator);
+const NumberSchemaCreatorHOC = withCompuListHighOrder(NumberSchemaCreator);
+const BooleanSchemaCreatorHOC = withCompuListHighOrder(BooleanSchemaCreator);
 
 class JsonSchema extends React.Component {
 
@@ -535,7 +538,7 @@ class JsonSchema extends React.Component {
           </TabPane>
           <TabPane tab="创建String" key="2">
             <div className={ styles.jsonSchemaTabPane }>
-              <StringSchemaCreator properties={
+              {/* <StringSchemaCreator properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
@@ -545,12 +548,23 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></StringSchemaCreator>
+              }></StringSchemaCreator> */}
+              <StringSchemaCreatorHOC properties={
+                this.state.JSONSchema.properties
+              } addNewProperties={
+                this.addNewProperties
+              } jsonSchema={
+                this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
+              }></StringSchemaCreatorHOC>
             </div>
           </TabPane>
           <TabPane tab="创建Number" key="3">
             <div className={ styles.jsonSchemaTabPane }>
-              <NumberSchemaCreator properties={
+              {/* <NumberSchemaCreator properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
@@ -560,12 +574,23 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></NumberSchemaCreator>
+              }></NumberSchemaCreator> */}
+              <NumberSchemaCreatorHOC properties={
+                this.state.JSONSchema.properties
+              } addNewProperties={
+                this.addNewProperties
+              } jsonSchema={
+                this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
+              }></NumberSchemaCreatorHOC>
             </div>
           </TabPane>
           <TabPane tab="创建Boolean" key="4">
             <div className={ styles.jsonSchemaTabPane }>
-              <BooleanSchemaCreator properties={
+              {/* <BooleanSchemaCreator properties={
                 this.state.JSONSchema.properties
               } addNewProperties={
                 this.addNewProperties
@@ -575,7 +600,18 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              }></BooleanSchemaCreator>
+              }></BooleanSchemaCreator> */}
+              <BooleanSchemaCreatorHOC properties={
+                this.state.JSONSchema.properties
+              } addNewProperties={
+                this.addNewProperties
+              } jsonSchema={
+                this.state.JSONSchema
+              } definitions={
+                this.state.JSONSchema.definitions
+              } addNewDefinition={
+                this.addNewDefinition
+              }></BooleanSchemaCreatorHOC>
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
             <div className={ styles.jsonSchemaTabPane }>
