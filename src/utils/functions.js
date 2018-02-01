@@ -3,20 +3,19 @@ import { message } from 'antd';
 export default {
   I64BIT_TABLE: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'.split(''),
   createHash: (input) => {
-    var hash = 5381;
-    var i = input.length - 1;
+    let hash = 5381;
+    let i = input.length - 1;
 
-    if(typeof input === 'string'){
+    if (typeof input === 'string') {
       for (; i > -1; i--)
       hash += (hash << 5) + input.charCodeAt(i);
-    }
-    else{
+    } else {
       for (; i > -1; i--)
       hash += (hash << 5) + input[i];
     }
-    var value = hash & 0x7FFFFFFF;
+    let value = hash & 0x7FFFFFFF;
 
-    var retValue = '';
+    let retValue = '';
     do {
       retValue += this.I64BIT_TABLE[value & 0x3F];
     }
@@ -27,7 +26,7 @@ export default {
   createRandomId: () => {
     let str = '';
     let pos = null;
-    const arr = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+    const arr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_'.split('');
     let range = Math.round(Math.random() * (6 - 4)) + 4;
     for (var i = 0; i < range; i++) {
       pos = Math.round(Math.random() * (arr.length - 1));

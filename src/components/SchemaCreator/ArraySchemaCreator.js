@@ -36,6 +36,7 @@ class ArraySchemaCreator extends React.Component {
     asFixedItems: false,
     coverFixedItems: false,
     refStatus: false,
+    useDefault: false,
     asDefinition: false,
     ownerList: [],
     defList: [],
@@ -54,6 +55,10 @@ class ArraySchemaCreator extends React.Component {
       owner: '',
       defOwner: 'definitions',
       $ref: ''
+    },
+    arraySchemaOptions: {
+      default: [],
+      minItems: ''
     },
     additionalItems: {},
     fixedItemsList: [],
@@ -321,6 +326,7 @@ class ArraySchemaCreator extends React.Component {
       asFixedItems: false,
       coverFixedItems: false,
       refStatus: false,
+      useDefault: false,
       asDefinition: false,
       uniqueItemsStatus: false,
       newDep: {
@@ -332,10 +338,13 @@ class ArraySchemaCreator extends React.Component {
         key: '',
         title: '',
         description: '',
-        default: [],
         owner: '',
         defOwner: 'definitions',
         $ref: ''
+      },
+      arraySchemaOptions: {
+        default: [],
+        minItems: ''
       },
       additionalItems: {},
       fixedItemsList: [],
@@ -375,6 +384,16 @@ class ArraySchemaCreator extends React.Component {
       data.asFixedItems = true;
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
+    }
+
+    // * 判断是否应该加入default
+    if (this.state.useDefault) {
+      data.default = this.state.arraySchemaOptions.default;
+    }
+
+    // * 判断是否应该加入minItems
+    if (this.state.arraySchemaOptions.minItems !== '') {
+      data.minItems = this.state.arraySchemaOptions.minItems;
     }
 
     // * 判断是否应该加入依赖
@@ -473,21 +492,40 @@ class ArraySchemaCreator extends React.Component {
     });
     this.setState((prevState, props) => {
       return {
-        arraySchema: {
-          ...prevState.arraySchema,
+        arraySchemaOptions: {
+          ...prevState.arraySchemaOptions,
           default: tmpValueList
         }
       };
     });
   }
 
-  uiChange = (value) => {
-    console.log('uiChange value:', value);
+  useDefaultChange = (event) => {
+    let checked = event.target.checked;
+    this.setState((prevState, props) => {
+      let data = {
+        ...prevState.arraySchemaOptions
+      };
+      if (!checked) {
+        data.default = [];
+      }
+      return {
+        arraySchemaOptions: data,
+        useDefault: checked
+      }
+    });
+  }
+
+  minItemsInput = (event) => {
+    let tmpValue = event.target.value;
+    if (isNaN(Number(tmpValue))) {
+      return;
+    }
     this.setState((prevState, props) => {
       return {
-        arraySchema: {
-          ...prevState.arraySchema,
-          ui: value
+        arraySchemaOptions: {
+          ...prevState.arraySchemaOptions,
+          minItems: tmpValue === '' ? '' : Number(tmpValue)
         }
       };
     });
@@ -837,12 +875,17 @@ class ArraySchemaCreator extends React.Component {
               <Input value={ this.state.arraySchema.description } onInput={ this.descriptionInput }></Input>
             </FormItem>
 
-            <FormItem label="default">
-              <TextArea value={ this.state.arraySchema.default.join(',') } onInput={ this.defaultInput }></TextArea>
-            </FormItem>
-
             <FormItem label="uniqueItems">
               <Checkbox checked={ this.state.uniqueItemsStatus } onChange={ this.uniqueItemsStatusChange }>成员唯一（成员只有一个）</Checkbox>
+            </FormItem>
+
+            <FormItem label="default">
+              <Checkbox checked={ this.state.useDefault !== undefined ? this.state.useDefault : false } onChange={ this.useDefaultChange }>使用default</Checkbox>
+              <TextArea disabled={ this.state.useDefault !== undefined ? !this.state.useDefault : false } value={ this.state.arraySchemaOptions.default !== undefined ? this.state.arraySchemaOptions.default.join(',') : '' } onInput={ this.defaultInput }></TextArea>
+            </FormItem>
+
+            <FormItem label="minItems">
+              <Input value={ this.state.arraySchemaOptions.minItems } onInput={ this.minItemsInput }></Input>
             </FormItem>
 
             <FormItem label="properties dependencies">

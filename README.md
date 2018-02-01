@@ -157,7 +157,17 @@
   - Custom titles
   - Custom descriptions
 
-## Update Log
+## Change Log
+
+### 2018-01-31
+
+- array类型的schema构造器加入minItems设置
+- 使用minItems时，formData会根据default值判断是否需要填充空值
+- 完善HTML5 Input Types功能
+- 完善Custom labels for enum fields功能
+- 修复已知问题
+  - 根目录type为对象时，无法正确生成properties的uiSchema
+  - 根目录type为数组时，生成的formData成员重复
 
 ### 2018-01-30
 

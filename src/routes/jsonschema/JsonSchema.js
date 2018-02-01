@@ -193,14 +193,20 @@ class JsonSchema extends React.Component {
           FormData: ''
         };
 
-        if (newProperty.default !== undefined) {
-          data.FormData = newProperty.default;
-        } else if (newProperty.type === 'object') {
+        if (newProperty.type === 'object') {
           data.FormData = {};
         } else if (newProperty.type === 'array') {
           data.FormData = [];
+          if (newProperty.default !== undefined) {
+            data.FormData = [...newProperty.default];
+          }
+          // * 如果数组设置了minItems
+          if (newProperty.minItems) {
+            let len = data.FormData.length;
+            newProperty.minItems > len && (data.FormData = data.FormData.concat([...Array(newProperty.minItems - len).fill('')]));
+          }
         } else {
-          data.FormData = '';
+          data.FormData = newProperty.default !== undefined ? newProperty.default : '';
         }
 
         newProperty.ui = newProperty.ui ? newProperty.ui : {};
@@ -294,7 +300,9 @@ class JsonSchema extends React.Component {
 
     // * ui相关start---------------
     // * 设置ui最终位置的js类型与key名
-    if (tmpProperties.type === 'object' || (ownerList.length === 1 && ownerList[0] === '')) {
+    if (tmpProperties.type === 'object'
+    || (ownerList.length === 1 && ownerList[0] === '')
+    || (ownerList.length === 1 && ownerList[0] === 'global' && this.state.JSONSchema.type === 'object')) {
       useUISchema[newProperty.key] = {
         ...useUISchema[newProperty.key]
       };
@@ -349,19 +357,24 @@ class JsonSchema extends React.Component {
     // * 如果没有设置default，则再formdata中设置对应的key
     if (newProperty.type === 'object') {
       useFormData[newProperty.key] = {};
-    }
-    //  else if (newProperty.type === 'array' && newProperty.asFixedItems) {
-    //   useFormData[newProperty.key] !== undefined ? useFormData[newProperty.key].push('') : (useFormData[newProperty.key] = ['']);
-    // }
-    else if (newProperty.type === 'array') {
+    } else if (newProperty.type === 'array') {
       useFormData[newProperty.key] = [];
+      // * 如果数组设置了default
+      if (newProperty.default) {
+        useFormData[newProperty.key] = [...newProperty.default];
+      }
+      // * 如果数组设置了minItems
+      if (newProperty.minItems) {
+        let len = useFormData[newProperty.key].length;
+        newProperty.minItems > len && (useFormData[newProperty.key] = useFormData[newProperty.key].concat([...Array(2).fill('')]));
+      }
     } else if (newProperty.default === undefined) {
       if (utilFunc.getPropertyJsType(useFormData).indexOf('Object') !== -1) {
         useFormData[newProperty.key] = '';
       } else if (utilFunc.getPropertyJsType(useFormData).indexOf('Array') !== -1) {
-        newProperty.type === 'boolean' && useFormData.push(false);
-        newProperty.type === 'number' && useFormData.push(0);
-        newProperty.type === 'string' && useFormData.push('');
+        // newProperty.type === 'boolean' && useFormData.push(false);
+        // newProperty.type === 'number' && useFormData.push(0);
+        // newProperty.type === 'string' && useFormData.push('');
       }
     }
     // * formData相关end------------
@@ -437,7 +450,6 @@ class JsonSchema extends React.Component {
         };
       } else if (utilFunc.getPropertyJsType(tmpFormData).indexOf('Array') !== -1) {
         data.FormData = [
-          ...prevState.FormData,
           ...tmpFormData
         ];
       }
@@ -454,11 +466,8 @@ class JsonSchema extends React.Component {
   addNewDefinition = (newDefinition) => {
     delete newDefinition.ui;
 
-    console.log('addNewDefinition newDefinition:', newDefinition);
-
     let defOwner = newDefinition.defOwner;
     let defOwnerList = defOwner.split('~/~');
-    console.log('defOwnerList', defOwnerList);
 
     let useDefObj = cloneDeep(this.state.JSONSchema);
     let tmpDefObj = useDefObj;
@@ -472,7 +481,6 @@ class JsonSchema extends React.Component {
       tmpDefObj = tmpDefObj['definitions'];
     }
     tmpDefObj[newDefinition.key] = newDefinition;
-    console.log('useDefObj', useDefObj);
     this.setState((prevState, props) => {
       return {
         JSONSchema: {
