@@ -46,6 +46,7 @@ class NumberSchemaCreator extends React.Component {
     numberSchemaAddition: {
       default: '',
       enum: '',
+      enumNames: '',
       minimum: '',
       maximum: '',
       multipleOf: ''
@@ -316,6 +317,9 @@ class NumberSchemaCreator extends React.Component {
       delete data.$ref;
       // * 如果有设置ui，则将ui添加到UISchema
       if (Object.keys(this.uiCreator.state.ui).length > 0) {
+        if (this.uiCreator.state.ui.options && Object.keys(this.uiCreator.state.ui.options).length < 0) {
+          delete this.uiCreator.state.ui.options;
+        }
         data.ui = this.uiCreator.state.ui;
       }
       this.props.addNewProperties(data);
@@ -407,15 +411,16 @@ class NumberSchemaCreator extends React.Component {
     let checked = event.target.checked;
     this.setState((prevState, props) => {
       let data = {
-        ...prevState.numberSchema
+        ...prevState.numberSchemaAddition
       };
       if (!checked) {
         delete data.enum;
+        delete data.enumNames
       } else {
         data.enum = '';
       }
       return {
-        numberSchema: data,
+        numberSchemaAddition: data,
         enumStatus: checked
       }
     });
@@ -459,7 +464,7 @@ class NumberSchemaCreator extends React.Component {
       });
       tmpRes = res.list;
     } else {
-      tmpRes = '';
+      tmpRes = [];
     }
 
     this.setState((prevState, props) => {
@@ -470,6 +475,30 @@ class NumberSchemaCreator extends React.Component {
         }
       }
     });
+  }
+
+  enumNamesValueInput = (event) => {
+    event.persist();
+    let res = {};
+    let tmpRes = [];
+    let tmpValue = event.target.value;
+    if (tmpValue !== '') {
+      res = this.filterCreateNumberList({
+        value: tmpValue
+      })
+      tmpRes = res.list;
+    } else {
+      tmpRes = [];
+    }
+
+    this.setState((prevState, props) => {
+      return {
+        numberSchemaAddition: {
+          ...prevState.numberSchemaAddition,
+          enumNames: tmpRes
+        }
+      }
+    })
   }
 
   minimumInput = (event) => {
@@ -755,6 +784,8 @@ class NumberSchemaCreator extends React.Component {
             <FormItem label="enum">
               <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
               <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchemaAddition.enum ? this.state.numberSchemaAddition.enum.join(',') : '' } onInput={ this.enumValueInput }></TextArea>
+              enumNames:
+              <TextArea disabled={ !this.state.enumStatus } value={ this.state.numberSchemaAddition.enumNames ? this.state.numberSchemaAddition.enumNames.join(',') : '' } onInput={ this.enumNamesValueInput }></TextArea>
             </FormItem>
 
             <FormItem label="最小值">

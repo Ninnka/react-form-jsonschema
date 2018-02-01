@@ -45,7 +45,8 @@ class BooleanUI extends React.Component {
             ...prevState.ui.options,
             [prevState.options.name]: prevState.options.value
           }
-        }
+        },
+        options: {}
       }
     })
   }
