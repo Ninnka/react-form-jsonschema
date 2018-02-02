@@ -3,7 +3,7 @@ import React from 'react';
 import ReactJson from 'react-json-view';
 
 // * 功能库
-import utilFunc from '@utils/functions';
+// import utilFunc from '@utils/functions';
 
 class PreviewFormData extends React.Component {
 
@@ -11,14 +11,14 @@ class PreviewFormData extends React.Component {
 
   // * ------------
 
-  deleteHandle = (param) => {
-    console.log('formdata deletehandle param', param);
-    this.props.deleteJsonSchemaData(param);
-    utilFunc.messageSuccess({
-      message: '删除成功'
-    });
-    return true;
-  }
+  // deleteHandle = (param) => {
+  //   console.log('formdata deletehandle param', param);
+  //   this.props.deleteJsonSchemaData(param);
+  //   utilFunc.messageSuccess({
+  //     message: '删除成功'
+  //   });
+  //   return true;
+  // }
 
   // * ------------
 
@@ -26,8 +26,7 @@ class PreviewFormData extends React.Component {
     return (
       <div>
         { typeof this.props.FormData === 'object' ?
-          <ReactJson src={ this.props.FormData }
-                     onDelete={ this.deleteHandle } /> :
+          <ReactJson src={ this.props.FormData } /> :
           'FormData: ' + this.props.FormData
         }
       </div>

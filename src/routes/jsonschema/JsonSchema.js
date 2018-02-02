@@ -342,17 +342,23 @@ class JsonSchema extends React.Component {
     // * 将ui加入到目标位置
     newProperty.ui = newProperty.ui ? newProperty.ui : {};
     if (utilFunc.getPropertyJsType(useUISchema).indexOf('Array') !== -1) {
+      console.log('useUISchema before', useUISchema);
       let data = {};
       for (let item of Object.entries(newProperty.ui)) {
         let uiPrefix = item[0] !== 'classNames' ? 'ui:' : '';
         data[uiPrefix + item[0]] = item[1];
       }
-      useUISchema[tmpProperties.items.length] = data;
-      for (let i = 0; i < tmpProperties.items.length; i++) {
-        if (typeof useUISchema[i] === 'undefined') {
-          useUISchema[i] = {};
-        }
-      }
+      // console.log('tmpProperties', tmpProperties);
+      // console.log('tmpProperties.items.length', tmpProperties.items.length);
+      // useUISchema[tmpProperties.items.length] = data;
+      useUISchema.push({...data});
+      console.log('useUISchema after', useUISchema);
+
+      // for (let i = 0; i < tmpProperties.items.length; i++) {
+      //   if (typeof useUISchema[i] === 'undefined') {
+      //     useUISchema[i] = {};
+      //   }
+      // }
     } else if (utilFunc.getPropertyJsType(useUISchema).indexOf('Object') !== -1) {
       for (let item of Object.entries(newProperty.ui)) {
         let uiPrefix = item[0] !== 'classNames' ? 'ui:' : '';
@@ -363,31 +369,7 @@ class JsonSchema extends React.Component {
     delete newProperty.ui;
     // * ui相关end---------------
 
-    // * formData相关start------------
-    // * 如果没有设置default，则再formdata中设置对应的key
-    if (newProperty.type === 'object') {
-      useFormData[newProperty.key] = {};
-    } else if (newProperty.type === 'array') {
-      useFormData[newProperty.key] = [];
-      // * 如果数组设置了default
-      if (newProperty.default) {
-        useFormData[newProperty.key] = [...newProperty.default];
-      }
-      // * 如果数组设置了minItems
-      if (newProperty.minItems) {
-        let len = useFormData[newProperty.key].length;
-        newProperty.minItems > len && (useFormData[newProperty.key] = useFormData[newProperty.key].concat([...Array(2).fill('')]));
-      }
-    } else if (newProperty.default === undefined) {
-      if (utilFunc.getPropertyJsType(useFormData).indexOf('Object') !== -1) {
-        useFormData[newProperty.key] = '';
-      } else if (utilFunc.getPropertyJsType(useFormData).indexOf('Array') !== -1) {
-        // newProperty.type === 'boolean' && useFormData.push(false);
-        // newProperty.type === 'number' && useFormData.push(0);
-        // newProperty.type === 'string' && useFormData.push('');
-      }
-    }
-    // * formData相关end------------
+
 
     // * 如果是使用$ref的情况，获取$ref的正式路径
     if (newProperty.$ref) {
@@ -406,7 +388,7 @@ class JsonSchema extends React.Component {
       && tmpProperties.type === 'array'
       && newProperty.asFixedItems
     ) {
-      delete newProperty.asFixedItems;
+      // delete newProperty.asFixedItems;
       if (Object.prototype.toString.call(tmpProperties.items).indexOf('Object') !== -1) {
         Object.keys(tmpProperties.items).length > 0 && (tmpProperties.additionalItems = tmpProperties.items);
         tmpProperties.items = [];
@@ -437,6 +419,47 @@ class JsonSchema extends React.Component {
     } else {
       tmpProperties[newProperty.key] = newProperty;
     }
+
+    // * formData相关start------------
+    // * 如果没有设置default，则再formdata中设置对应的key
+    if (newProperty.type === 'object') {
+      useFormData[newProperty.key] = {};
+    } else if (newProperty.type === 'array') {
+      useFormData[newProperty.key] = [];
+      // * 如果数组设置了default
+      if (newProperty.default) {
+        useFormData[newProperty.key] = [...newProperty.default];
+      }
+      // * 如果数组设置了minItems
+      if (newProperty.minItems) {
+        let len = useFormData[newProperty.key].length;
+        newProperty.minItems > len && (useFormData[newProperty.key] = useFormData[newProperty.key].concat([...Array(2).fill('')]));
+      }
+    } else {
+      if (newProperty.default === undefined && utilFunc.getPropertyJsType(useFormData).indexOf('Object') !== -1) {
+        useFormData[newProperty.key] = '';
+      } else if (utilFunc.getPropertyJsType(useFormData).indexOf('Array') !== -1 && newProperty.asFixedItems) {
+        let initValue = null;
+        switch (newProperty.type) {
+          case 'boolean':
+            initValue = newProperty.default === undefined ? false : newProperty.default;
+            break;
+          case 'number':
+            initValue = newProperty.default === undefined ? 0 : newProperty.default;
+            break;
+          case 'string':
+            initValue = newProperty.default === undefined ? '' : newProperty.default;
+            break;
+          default:
+            initValue = '';
+            break;
+        }
+        useFormData.push(initValue);
+        // let len = tmpProperties.items.length;
+        // useFormData.splice(len, 1, initValue);
+      }
+    }
+    // * formData相关end------------
 
     this.setState((prevState, props) => {
       let data =  {
@@ -504,8 +527,14 @@ class JsonSchema extends React.Component {
     });
   }
 
+  // * ------------
+
   editJsonSchemaData = (param) => {
     console.log('editJsonSchemaData param', param);
+    if (param.name === 'key') {
+      this.editUISchemaFromJSONSchema(param.existing_value, param.new_value, param.namespace);
+      this.editFormDataFromJSONSchema(param.existing_value, param.new_value, param.namespace);
+    }
     if (!isEqual(this.state.JSONSchema, param.updated_src)) {
       this.setState({
         JSONSchema: param.updated_src
@@ -513,13 +542,117 @@ class JsonSchema extends React.Component {
     }
   }
 
+  editUISchemaFromJSONSchema = (ev, nv, nameSpace) => {
+    this.setState((prevState, props) => {
+      let useUISchema = {
+        ...prevState.UISchema
+      };
+      let iteUISchema = useUISchema;
+      let nspLen = nameSpace.length;
+      for (let i = 0; i < nspLen; i++) {
+        if (nameSpace[i] !== 'properties' && i !== nspLen - 1) {
+          iteUISchema = iteUISchema[nameSpace[i]];
+        }
+        console.log('iteUISchema', iteUISchema);
+      }
+      iteUISchema[nv] = iteUISchema[ev];
+      delete iteUISchema[ev];
+      console.log('useUISchema', useUISchema);
+      return {
+        UISchema: useUISchema
+      }
+    });
+  }
+
+  editFormDataFromJSONSchema = (ev, nv, nameSpace) => {
+    this.setState((prevState, props) => {
+      let useFormData = {
+        ...prevState.FormData
+      };
+      let iteFormData = useFormData;
+      let nspLen = nameSpace.length;
+      for (let i = 0; i < nspLen; i++) {
+        if (nameSpace[i] !== 'properties' && i !== nspLen - 1) {
+          iteFormData = iteFormData[nameSpace[i]];
+        }
+        console.log('iteFormData', iteFormData);
+      }
+      if (iteFormData[ev] !== undefined) {
+        iteFormData[nv] = iteFormData[ev]
+        delete iteFormData[ev];
+      }
+      console.log('useFormData', useFormData);
+      return {
+        FormData: useFormData
+      }
+    });
+  }
+
   deleteJsonSchemaData = (param) => {
-    console.log('editJsonSchemaData param', param);
+    console.log('deleteJsonSchemaData param', param);
+    if (typeof param.existing_value === 'object' && param.existing_value.type) {
+      this.deleteUISchemaFromJSONSchema(param.existing_value, param.name, param.namespace);
+      this.deleteFormDataFromJSONSchema(param.existing_value, param.name, param.namespace);
+    }
     if (!isEqual(this.state.JSONSchema, param.updated_src)) {
       this.setState({
         JSONSchema: param.updated_src
       })
     }
+  }
+
+  deleteUISchemaFromJSONSchema = (ev, name, nameSpace) => {
+    this.setState((prevState, props) => {
+      let useUISchema = {
+        ...prevState.UISchema
+      };
+      let iteUISchema = useUISchema;
+      let nspLen = nameSpace.length;
+      for (let i = 0; i < nspLen; i++) {
+        iteUISchema = iteUISchema[nameSpace[i]];
+        console.log('iteUISchema', iteUISchema);
+      }
+      if (isNaN(Number(name))) {
+        delete iteUISchema[ev.key];
+      } else {
+        iteUISchema.splice(Number(name), 1);
+      }
+      console.log('useUISchema', useUISchema);
+      return {
+        UISchema: useUISchema
+      }
+    });
+  }
+
+  deleteFormDataFromJSONSchema = (ev, name, nameSpace) => {
+    if (name === 'additionalItems') {
+      return;
+    }
+    this.setState((prevState, props) => {
+      let useFormData = utilFunc.getPropertyJsType(prevState.FormData).indexOf('Object') !== -1 ? {
+        ...prevState.FormData
+      } : [
+        ...prevState.FormData
+      ];
+      let iteFormData = useFormData;
+      let nspLen = nameSpace.length;
+      for (let i = 0; i < nspLen; i++) {
+        if (nameSpace[i] === 'items') {
+          continue;
+        }
+        iteFormData = iteFormData[nameSpace[i]];
+        console.log('iteFormData', iteFormData);
+      }
+      if (isNaN(Number(name))) {
+        delete iteFormData[ev.key];
+      } else {
+        iteFormData.splice(Number(name), 1);
+      }
+      console.log('useFormData', useFormData);
+      return {
+        FormData: useFormData
+      }
+    });
   }
 
   // * ------------

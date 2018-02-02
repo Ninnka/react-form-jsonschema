@@ -9,9 +9,9 @@ class PreviewJsonSchema extends React.Component {
 
   state = {};
 
-  editExcludeList = ['key', 'type'];
+  editExcludeList = ['type'];
 
-  deleteExcludeList = ['key', 'type'];
+  deleteExcludeList = ['key', 'type', 'properties', 'items'];
 
   componentDidMount () {
 
@@ -27,6 +27,15 @@ class PreviewJsonSchema extends React.Component {
         message: '修改成功'
       });
       return true;
+    } else if (
+      // * 如果namespace最后一个是数字或者是additionalItems则修改无效
+      param.namespace[param.namespace.length - 1] === 'additionItems'
+      || !isNaN(Number(param.namespace[param.namespace.length - 1]))
+    ) {
+      utilFunc.messageError({
+        message: '该属性修改也没有用的'
+      });
+      return false;
     } else {
       utilFunc.messageError({
         message: '该属性不能修改'
