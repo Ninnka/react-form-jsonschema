@@ -22,15 +22,21 @@ class BooleanSchemaCreator extends React.Component {
 
   state = {
     ownerList: [],
+    defList: [],
+    refList: [],
     ownerTypeStatus: 'object',
     asFixedItems: false,
     coverFixedItems: false,
+    asDefinition: false,
+    asCreateDefinition: false,
     booleanSchema: {
       key: '',
       title: '',
       description: '',
       default: '',
-      owner: ''
+      owner: '',
+      '$ref': '',
+      defOwner: 'definitions'
     }
   }
 
@@ -38,90 +44,24 @@ class BooleanSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
-    let tmpOwnerList = [];
-    if (nextProps.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', nextProps.properties));
-    } else if (nextProps.jsonSchema && nextProps.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
-    }
+    // this.compuListPrepare(nextProps);
+    let res = nextProps.compuListPrepare(nextProps);
     this.setState({
-      ownerList: tmpOwnerList
+      ownerList: res.ownerList,
+      defList: res.defList,
+      refList: res.refList
     });
-
   }
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
-    let tmpOwnerList = [];
-    if (this.props.properties) {
-      tmpOwnerList = [{path: 'global', type: 'object'}].concat(this.compuOwnerList('global', this.props.properties));
-    } else if (this.props.jsonSchema && this.props.jsonSchema.type === 'array') {
-      tmpOwnerList = this.compuOwnerListArray('', ['global', this.props.jsonSchema]);
-    }
+    // this.compuListPrepare(this.props);
+    let res = this.props.compuListPrepare(this.props);
     this.setState({
-      ownerList: tmpOwnerList
+      ownerList: res.ownerList,
+      defList: res.defList,
+      refList: res.refList
     });
-  }
-
-  // * ------------
-
-  compuOwnerList = (path, properties) => {
-    let tmpOwnerList = [];
-    let propertiesEntryList = Object.entries(properties);
-    // console.log('path properties', path, propertiesEntryList);
-    for (let item of propertiesEntryList) {
-      if (item[1].type === 'object') {
-        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
-      } else if (item[1].type === 'array') {
-        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
-      }
-    }
-    // console.log('path tmpOwnerList', path, tmpOwnerList);
-    return tmpOwnerList;
-  }
-
-  compuOwnerListObject = (path, item, exclude = false) => {
-    let tmpOwnerList = [];
-    !exclude && tmpOwnerList.push({
-      path: path + '~/~' + item[0],
-      type: 'object'
-    });
-    tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
-    return tmpOwnerList;
-  }
-
-  compuOwnerListArray = (path, item, exclude = false) => {
-    let tmpOwnerList = [];
-    let tmpPath = path + '~/~' + item[0];
-    !exclude && tmpOwnerList.push({
-      path: tmpPath,
-      type: 'array'
-    });
-    if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
-      let len = item[1].items.length;
-      for (let i = 0; i < len; i++) {
-        let tarr = this.compuOwnerListHelper(tmpPath, ['items~/~' + i, item[1].items[i]]);
-        tmpOwnerList = tmpOwnerList.concat(tarr);
-      }
-      if (item[1].additionalItems && item[1].additionalItems.type !== undefined) {
-        let tarr = this.compuOwnerListHelper(tmpPath, ['additionalItems', item[1].additionalItems]);
-        tmpOwnerList = tmpOwnerList.concat(tarr);
-      }
-    } else if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Object') !== -1) {
-      let tarr = this.compuOwnerListHelper(tmpPath, ['items', item[1].items]);
-      tmpOwnerList = tmpOwnerList.concat(tarr);
-    }
-    return tmpOwnerList;
-  }
-
-  compuOwnerListHelper = (path, item) => {
-    let tmpOwnerList = [];
-    if (item[1].type === 'object') {
-      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
-    } else if (item[1].type === 'array') {
-      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
-    }
-    return tmpOwnerList;
   }
 
   resetForm = () => {
@@ -129,16 +69,21 @@ class BooleanSchemaCreator extends React.Component {
       ownerTypeStatus: 'object',
       asFixedItems: false,
       coverFixedItems: false,
+      asDefinition: false,
+      asCreateDefinition: false,
       booleanSchema: {
         key: '',
         title: '',
         description: '',
         default: '',
-        owner: ''
+        owner: '',
+        '$ref': '',
+        defOwner: 'definitions'
       }
     });
     this.UIschema.setState({
-      ui: {}
+      ui: {},
+      options: {}
     });
   }
 
@@ -146,6 +91,7 @@ class BooleanSchemaCreator extends React.Component {
     console.log('confirmForm');
     let data = {
       ...this.state.booleanSchema,
+      asDefinition: this.state.asDefinition,
       type: 'boolean'
     };
     if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
@@ -153,10 +99,29 @@ class BooleanSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
-    if (Object.keys(this.UIschema.state.ui).length > 0) {
-      data.ui = this.UIschema.state.ui;
+
+    if (this.state.asDefinition) {
+      let refData = {
+        owner: data.owner,
+        $ref: data.$ref,
+        key: data.key,
+        refStatus: true
+      }
+      this.props.addNewProperties(refData);
+    } else if (this.state.asCreateDefinition) {
+       delete data.$ref;
+       this.props.addNewDefinition(data);
+    } else {
+      delete data.$ref;
+      if (this.UIschema.state.ui && Object.keys(this.UIschema.state.ui).length > 0) {
+        if (this.UIschema.state.ui.options && Object.keys(this.UIschema.state.ui.options).length < 0) {
+          delete this.UIschema.state.ui.options;
+        }
+        data.ui = this.objectFilter(this.UIschema.state.ui);
+      }
+      this.props.addNewProperties(data);
     }
-    this.props.addNewProperties(data);
+    console.log(this.state.ownerList);
     setTimeout(this.resetForm, 0);
   }
 
@@ -222,7 +187,6 @@ class BooleanSchemaCreator extends React.Component {
   }
 
   uiChange = (value) => {
-    console.log('uiChange value:', value);
     this.setState((prevState, props) => {
       return {
         booleanSchema: {
@@ -255,10 +219,10 @@ class BooleanSchemaCreator extends React.Component {
     if (!this.state.booleanSchema.key) {
       return;
     }
-    if (this.state.booleanSchema.owner !== '') {
-      this.confirmForm();
-    } else {
+    if (this.state.booleanSchema.owner === '' && !this.state.asCreateDefinition){
       this.showMessage();
+    } else {
+      this.confirmForm();
     }
   }
 
@@ -272,69 +236,185 @@ class BooleanSchemaCreator extends React.Component {
     });
   }
 
+  asDefinitionStatusChange = (e) => {
+    let checked = e.target.checked;
+    if (!checked) {
+      this.setState({
+        asDefinition: checked,
+      })
+    } else {
+      this.setState({
+        asDefinition: checked,
+        asCreateDefinition: !checked
+      })
+    }
+    
+  }
+
+  asCreateDefinitionStatusChange = (e) => {
+    let checked = e.target.checked;
+    if (!checked) {
+      this.setState({
+        asCreateDefinition: checked,
+      })
+    } else {
+      this.setState({
+        asCreateDefinition: checked,
+        asDefinition: !checked
+      })      
+    }
+  }
+
+  refChange = (ref) => {
+    this.setState((prevState, props) => {
+      return {
+        booleanSchema: {
+          ...prevState.booleanSchema,
+          $ref: prevState.refList[ref].path
+        }
+      }
+    });
+  }
+
+  // * ------------
+
+  // * 选择的definition创建位置路径变化时
+  defOwnerChange = (value) => {
+    this.setState((prevState, props) => {
+      return {
+        booleanSchema: {
+          ...prevState.booleanSchema,
+          defOwner: prevState.defList[value].path
+        }
+      };
+    });
+  }
+
+  objectFilter = (obj = {}) => {
+    if (!obj) {
+      return;
+    }
+    let data = {};
+    for (let item of Object.entries(obj)) {
+      if (item[1] !== '') {
+        data[item[0]] = item[1];
+      }
+    }
+    return data;
+  }
+
   // * ------------
 
   render () {
     return (
       <Form>
-        <FormItem label="选择所属对象">
-          <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange }>
-            {
-              this.state.ownerList.map((ele, index, arr) => {
-                return (
-                  <Option key={ ele.path + index } value={ index }>
-                    <div style={ {
-                      position: 'relative'
-                    } }>
-                      <span style={ {
-                        position: 'absolute',
-                        top: '0',
-                        left: '0'
-                      } }>{ ele.type + ' : ' }</span>
-                      <span style={ {
-                        marginLeft: '70px'
-                      } }>{ ele.path }</span>
-                    </div>
-                  </Option>
-                )
-              })
-            }
-          </Select>
-          { this.state.ownerTypeStatus === 'array' &&
-            <div>
-              <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
-              <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
-              <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
-            </div>
-          }
+        <FormItem label="$ref">
+          <Checkbox checked={this.state.asDefinition} onChange={this.asDefinitionStatusChange}>设置ref</Checkbox>
         </FormItem>
-
+        {
+          this.state.asDefinition &&
+          <FormItem label="选择definition" className="nested-form-item">
+            <Select allowClear value={ this.state.booleanSchema.$ref } onChange={ this.refChange }>
+              {
+                this.state.refList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      { ele.path }
+                    </Option>
+                  )
+                })
+              }
+            </Select>
+          </FormItem>
+        }
+        {
+          !this.state.asDefinition &&
+          <FormItem>
+            <Checkbox checked={this.state.asCreateDefinition} onChange={this.asCreateDefinitionStatusChange}>创建Definition</Checkbox>
+          </FormItem>
+        }
+        {
+          this.state.asCreateDefinition && 
+          <FormItem label="选择所属definition" className="nested-form-item">
+            <Select value={ this.state.booleanSchema.defOwner } onChange={ this.defOwnerChange }>
+              {
+                this.state.defList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      { ele.path }
+                    </Option>
+                  )
+                })
+              }
+            </Select>
+          </FormItem>
+        }
+        {
+          !this.state.asCreateDefinition &&
+          <FormItem label="选择所属对象">
+            <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange }>
+              {
+                this.state.ownerList.map((ele, index, arr) => {
+                  return (
+                    <Option key={ ele.path + index } value={ index }>
+                      <div style={ {
+                        position: 'relative'
+                      } }>
+                        <span style={ {
+                          position: 'absolute',
+                          top: '0',
+                          left: '0'
+                        } }>{ ele.type + ' : ' }</span>
+                        <span style={ {
+                          marginLeft: '70px'
+                        } }>{ ele.path }</span>
+                      </div>
+                    </Option>
+                  )
+                })
+              }
+            </Select>
+            { this.state.ownerTypeStatus === 'array' &&
+              <div>
+                <Checkbox checked={ this.state.asFixedItems } onChange={ this.asFixedItemsStatusChange }>使用fixedItems</Checkbox>
+                <Checkbox checked={ this.state.coverFixedItems } onChange={ this.coverFixedItemsStatusChange }>覆盖fixedItems</Checkbox>
+                <p>选择的目标为数组，可以作为items或fixedItems(如果使用了fixedItems，目标已有items会自动变成addtionalItems，如果不使用fixedItems，则会把已有的items)</p>
+              </div>
+            }
+          </FormItem>
+        }
         <FormItem label="key">
           <Input value={ this.state.booleanSchema.key } onInput={ this.keyInput }></Input>
         </FormItem>
+        {
+          !this.state.asDefinition && 
+          <div>
+            <FormItem label="title">
+              <Input value={ this.state.booleanSchema.title } onInput={ this.titleInput }></Input>
+            </FormItem>
 
-        <FormItem label="title">
-          <Input value={ this.state.booleanSchema.title } onInput={ this.titleInput }></Input>
-        </FormItem>
+            <FormItem label="description">
+              <Input value={ this.state.booleanSchema.description } onInput={ this.descriptionInput }></Input>
+            </FormItem>
 
-        <FormItem label="description">
-          <Input value={ this.state.booleanSchema.description } onInput={ this.descriptionInput }></Input>
-        </FormItem>
-
-        <FormItem label="default">
-          <Select value={ this.state.booleanSchema.default.toString() } onChange={ this.defaultInput }>
-            <Option value="true">true</Option>
-            <Option value="false">false</Option>
-          </Select>
-        </FormItem>
-
-        <FormItem label="设置ui：">
-          <div className="nested-form-item">
-            <UISchema ref={ (ui) => {
-              this.UIschema = ui;
-            }}/>
+            <FormItem label="default">
+              <Select value={ this.state.booleanSchema.default.toString() } onChange={ this.defaultInput }>
+                <Option value="true">true</Option>
+                <Option value="false">false</Option>
+              </Select>
+            </FormItem>
+            {
+              !this.state.asCreateDefinition &&
+              <FormItem label="设置ui：">
+                <div className="nested-form-item">
+                  <UISchema ref={ (ui) => {
+                    this.UIschema = ui;
+                  }}/>
+                </div>
+              </FormItem>
+            }
           </div>
-        </FormItem>
+        }
         <FormItem className="form-buttons">
           <Button type="danger" onClick={ this.resetForm }>重置</Button>
           <Button type="primary" onClick={ this.handleConfirm }>确认</Button>
