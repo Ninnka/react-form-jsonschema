@@ -13,7 +13,7 @@ class PreviewUISchema extends React.Component {
 
   editHandle = (param) => {
     console.log('uischema editHandle param', param);
-    this.props.editJsonSchemaData(param);
+    // this.props.editUISchemaData(param);
     utilFunc.messageSuccess({
       message: '修改成功'
     });
@@ -22,7 +22,7 @@ class PreviewUISchema extends React.Component {
 
   deleteHandle = (param) => {
     console.log('uischema deleteHandle param', param);
-    this.props.deleteJsonSchemaData(param);
+    // this.props.deleteUISchemaData(param);
     utilFunc.messageSuccess({
       message: '删除成功'
     });

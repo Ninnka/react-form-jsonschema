@@ -159,6 +159,27 @@
 
 ## Change Log
 
+### 2018-02-02
+
+- 数据预览中修改或删除jsonSchema的属性时，可以自动修改uiSchema和formdata中对应的数据
+  - 一般属性可修改
+    - 修改属性为key
+      - 将jsonSchema中的对应key切换为新的key
+        - 如果namespace最后一个是数字或者是additionalItems则修改无效
+      - 将uiSchema中的对应key切换为新的key
+      - 将formData中的对应key切换为新的key
+  - type属性不可修改
+  - 一般属性可删除
+    - 删除的是key或整个对象时
+      - 将jsonSchema中的对应key删除
+      - 将uiSchema中的对应key删除
+      - 将formData中的对应key删除
+  - properties不可删除
+  - items不可删除
+- 修复已知问题
+  - 创建uiSchema时，数组中的成员的ui属性key值有误
+  - 创建formData时，数组中的items如果是fixed时，未正确添加对应的值
+
 ### 2018-02-01
 
 - 数据预览增加编辑功能和删除功能

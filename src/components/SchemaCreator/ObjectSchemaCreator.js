@@ -54,7 +54,6 @@ class ObjectSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
-    // this.compuListPrepare(nextProps);
     let res = nextProps.compuListPrepare(nextProps);
     this.setState({
       ownerList: res.ownerList,
@@ -65,7 +64,6 @@ class ObjectSchemaCreator extends React.Component {
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
-    // this.compuListPrepare(this.props);
     let res = this.props.compuListPrepare(this.props);
     this.setState({
       ownerList: res.ownerList,
