@@ -191,7 +191,7 @@ class BooleanSchemaCreator extends React.Component {
         if (this.UIschema.state.ui.options && Object.keys(this.UIschema.state.ui.options).length < 0) {
           delete this.UIschema.state.ui.options;
         }
-        data.ui = this.UIschema.state.ui;
+        data.ui = this.objectFilter(this.UIschema.state.ui);
       }
       this.props.addNewProperties(data);
     }
@@ -442,6 +442,19 @@ class BooleanSchemaCreator extends React.Component {
         }
       };
     });
+  }
+
+  objectFilter = (obj = {}) => {
+    if (!obj) {
+      return;
+    }
+    let data = {};
+    for (let item of Object.entries(obj)) {
+      if (item[1] !== '') {
+        data[item[0]] = item[1];
+      }
+    }
+    return data;
   }
 
   // * ------------

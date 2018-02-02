@@ -35,6 +35,7 @@ class NumberSchemaCreator extends React.Component {
     asInteger: false,
     asCreateDefinition: false,
     asDefinition: false,
+    asDefault: false,
     numberSchema: {
       key: '',
       title: '',
@@ -255,6 +256,7 @@ class NumberSchemaCreator extends React.Component {
       asInteger: false,
       asDefinition: false,
       asCreateDefinition: false,
+      asDefault: false,
       numberSchema: {
         key: '',
         title: '',
@@ -270,7 +272,8 @@ class NumberSchemaCreator extends React.Component {
       }
     });
     this.uiCreator.setState({
-      ui: {}
+      ui: {},
+      enumStatus: false
     });
   }
 
@@ -286,16 +289,28 @@ class NumberSchemaCreator extends React.Component {
     }
   }
 
-  submitForm = () => {
-    let data = {
-      ...this.state.numberSchema,
-      type: this.state.asInteger ? 'integer' : 'number'
-    };
-    for (let item of Object.entries(this.state.numberSchemaAddition)) {
+  objectFilter = (obj = {}) => {
+    if (!obj) {
+      return;
+    }
+    let data = {};
+    for (let item of Object.entries(obj)) {
       if (item[1] !== '') {
         data[item[0]] = item[1];
       }
     }
+    return data;
+  }
+
+  submitForm = () => {
+    let numberSchemaAddition = this.objectFilter(this.state.numberSchemaAddition);
+    let numberSchema = this.objectFilter(this.state.numberSchema);
+    let data = {
+      ...numberSchemaAddition,
+      ...numberSchema,
+      type: this.state.asInteger ? 'integer' : 'number'
+    };
+
     if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
       data.asFixedItems = true;
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
@@ -320,7 +335,7 @@ class NumberSchemaCreator extends React.Component {
         if (this.uiCreator.state.ui.options && Object.keys(this.uiCreator.state.ui.options).length < 0) {
           delete this.uiCreator.state.ui.options;
         }
-        data.ui = this.uiCreator.state.ui;
+        data.ui = this.objectFilter(this.uiCreator.state.ui);
       }
       this.props.addNewProperties(data);
     }
@@ -418,6 +433,7 @@ class NumberSchemaCreator extends React.Component {
         delete data.enumNames
       } else {
         data.enum = '';
+        data.enumNames = '';
       }
       return {
         numberSchemaAddition: data,
@@ -452,6 +468,19 @@ class NumberSchemaCreator extends React.Component {
     }
   }
 
+  filterCreateArray = (param) => {
+    let value = param.value;
+    if (!value) {
+      return {
+        list: []
+      }
+    }
+    let list = value.split(',');
+    return {
+      list
+    };
+  }
+
   enumValueInput = (event) => {
     event.persist()
     let res = {};
@@ -483,7 +512,7 @@ class NumberSchemaCreator extends React.Component {
     let tmpRes = [];
     let tmpValue = event.target.value;
     if (tmpValue !== '') {
-      res = this.filterCreateNumberList({
+      res = this.filterCreateArray({
         value: tmpValue
       })
       tmpRes = res.list;
@@ -677,6 +706,23 @@ class NumberSchemaCreator extends React.Component {
     });
   }
 
+  asDefaultChange = (event) => {
+    let checked = event.target.checked;
+    if (!checked) {
+      this.setState((prevState, props) => {
+        prevState.numberSchemaAddition.default && delete prevState.numberSchemaAddition.default;
+        return {
+          numberSchemaAddition: {
+            ...prevState.numberSchemaAddition
+          }
+        }
+      })
+    }
+    this.setState({
+      asDefault: checked
+    })
+  }
+
   // * ------------
 
   render () {
@@ -778,7 +824,8 @@ class NumberSchemaCreator extends React.Component {
             </FormItem>
 
             <FormItem label="default">
-              <Input value={ this.state.numberSchemaAddition.default } onInput={ this.defaultInput }></Input>
+              <Checkbox checked={ this.state.asDefault } onChange={ this.asDefaultChange }>使用default</Checkbox>
+              <Input disabled={ !this.state.asDefault } value={ this.state.numberSchemaAddition.default ? this.state.numberSchemaAddition.default : '' } onInput={ this.defaultInput }></Input>
             </FormItem>
 
             <FormItem label="enum">

@@ -24,6 +24,18 @@ class ObjectUICreator extends React.Component {
 
   // * ------------
 
+  uiClassNamesChange = (event) => {
+    let tmpValue = event.target.value;
+    this.setState((prevState, props) => {
+      return {
+        ui: {
+          ...prevState.ui,
+          classNames: tmpValue
+        }
+      }
+    });
+  }
+
   orderChange = (value = '') => {
     this.setState((prevState, props) => {
       return {
@@ -70,26 +82,17 @@ class ObjectUICreator extends React.Component {
     });
   }
 
-  uiClassNameChang = (event) => {
-    let value = event.target.value;
-    this.setState((prevState, props) => {
-      return {
-        ui: {
-          ...prevState.ui,
-          className: value
-        }
-      }
-    });
-  }
-
   // * ------------
 
   render () {
     return (
       <>
-        <FormItem label = "className">
-          <Input value={ this.state.ui.className ? this.state.ui.className : '' } onInput={ this.uiClassNameChang }></Input>
+        <FormItem label="classNames">
+          <Input value={ this.state.ui.classNames ? this.state.ui.classNames : '' } onChange={ (e) => {
+            this.uiClassNamesChange(e)
+          } }></Input>
         </FormItem>
+
         <FormItem label="order">
           <TextArea value={ this.state.ui.order ? this.state.ui.order : '' } onInput={ (event) => {
             this.orderChange(event.target.value);

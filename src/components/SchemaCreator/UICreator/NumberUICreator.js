@@ -18,6 +18,7 @@ class NumberUICreator extends React.Component {
   state = {
     ui: {},
     options: {},
+    enumStatus: false,
     widgetList: [
       'text',
       'updown',
@@ -138,6 +139,67 @@ class NumberUICreator extends React.Component {
     })
   }
 
+  enumStatusChange = (event) => {
+    let checked = event.target.checked;
+    if (!checked) {
+      let ui = this.state.ui;
+      delete ui.enumDisabled;
+      this.setState((prevState, props) => {
+        return {
+          ui: {
+            ...ui
+          }
+        }
+      })
+    }
+    this.setState((prevState, props) => {
+      return {
+        enumStatus: checked
+      }
+    })
+  }
+
+  filterCreateNumberList (param) {
+    let value = param.value;
+    if (!value) {
+      return {
+        list: []
+      }
+    }
+    let tmpValueList = value.split(',');
+    let list = tmpValueList.map((ele, index) => {
+      return ele;
+    });
+    return {
+      list
+    }
+  }
+
+  enumDisabledChange = (event) => {
+    event.persist()
+    let res = {};
+    let tmpRes = [];
+    let tmpValue = event.target.value;
+
+    if (tmpValue !== '') {
+      res = this.filterCreateNumberList({
+        value: tmpValue
+      });
+      tmpRes = res.list;
+    } else {
+      tmpRes = [];
+    }
+
+    this.setState((prevState, props) => {
+      return {
+        ui: {
+          ...prevState.ui,
+          enumDisabled: tmpRes
+        }
+      }
+    });
+  }
+
   // * ------------
 
   render () {
@@ -190,12 +252,8 @@ class NumberUICreator extends React.Component {
         </FormItem>
 
         <FormItem label="enumDisabled">
-          <TextArea value={ this.state.ui.enumDisabled ? this.state.ui.enumDisabled : '' } onInput={ (event) => {
-            this.uiChange({
-              key: 'enumDisabled',
-              value: event.target.value
-            })
-          } }></TextArea>
+          <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>设置enumDisabled</Checkbox>
+          <TextArea disabled={ !this.state.enumStatus } value={ this.state.ui.enumDisabled ? this.state.ui.enumDisabled : '' } onInput={ this.enumDisabledChange }></TextArea>
         </FormItem>
 
         <FormItem label="autofocus">
