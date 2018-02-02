@@ -14,6 +14,7 @@
     "react": "^16.2.0",
     "react-css-modules": "^4.7.1",
     "react-dom": "^16.2.0",
+    "react-json-view": "^1.16.0",
     "react-jsonschema-form": "^1.0.0"
   },
   "devDependencies": {
