@@ -31,6 +31,8 @@ class StringSchemaCreator extends React.Component {
     coverFixedItems: false,
     refStatus: false,
     asDefinition: false,
+    asDefault: false,
+    enumStatus: false,
     ownerList: [],
     defList: [],
     refList: [],
@@ -45,6 +47,7 @@ class StringSchemaCreator extends React.Component {
     stringSchemaAddition: {
       default: '',
       enum: '',
+      enumNames: '',
       format: ''
     }
   }
@@ -254,6 +257,8 @@ class StringSchemaCreator extends React.Component {
       coverFixedItems: false,
       refStatus: false,
       asDefinition: false,
+      asDefault: false,
+      enumStatus: false,
       stringSchema: {
         key: '',
         title: '',
@@ -269,7 +274,10 @@ class StringSchemaCreator extends React.Component {
       }
     });
     this.uiCreator.setState({
-      ui: {}
+      ui: {},
+      options: {},
+      enumStatus: false,
+      enumNamesStatus: false
     });
   }
 
@@ -285,14 +293,18 @@ class StringSchemaCreator extends React.Component {
   }
 
   submitForm = () => {
+    let stringSchema = this.objectFilter(this.state.stringSchema);
     let data = {
-      ...this.state.stringSchema,
+      ...stringSchema,
       type: 'string'
     };
 
     this.state.formatStatus && (data.format = this.state.stringSchemaAddition.format);
-    this.state.enumStatus && (data.enum = this.state.stringSchemaAddition.enum);
-    this.state.stringSchemaAddition.default && (data.default = this.state.stringSchemaAddition.default);
+    this.state.asDefault && (data.default = this.state.stringSchemaAddition.default);
+    if (this.state.enumStatus) {
+      data.enum = this.state.stringSchemaAddition.enum
+      data.enumNames = this.state.stringSchemaAddition.enumNames;
+    }
 
     if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
       data.asFixedItems = true;
@@ -312,9 +324,13 @@ class StringSchemaCreator extends React.Component {
       }
       tmpData.$ref && this.props.addNewProperties(tmpData);
     } else {
+      delete data.$ref;
       // * 如果有设置ui，则将ui添加到UISchema
       if (Object.keys(this.uiCreator.state.ui).length > 0) {
-        data.ui = this.uiCreator.state.ui;
+        if (this.uiCreator.state.ui.options && Object.keys(this.uiCreator.state.ui.options).length < 0) {
+          delete this.uiCreator.state.ui.options;
+        }
+        data.ui = this.objectFilter(this.uiCreator.state.ui);
       }
       this.props.addNewProperties(data);
     }
@@ -386,7 +402,7 @@ class StringSchemaCreator extends React.Component {
 
   minLengthInput = (event) => {
     let tmpValue = event.target.value;
-    if (tmpValue !== '' && !isNaN(Number(tmpValue))) {
+    if (tmpValue !== '' && !isNaN(Number(tmpValue)) &&  Number(tmpValue) < Number.MAX_SAFE_INTEGER) {
       this.setState((prevState, props) => {
         return {
           stringSchema: {
@@ -396,12 +412,21 @@ class StringSchemaCreator extends React.Component {
         };
       });
     } else {
-      this.setState((prevState, props) => {
-        delete prevState.minLength;
-        return {
-          stringSchema: prevState.stringSchema
-        };
-      });
+      if (tmpValue === '') {
+        this.setState((prevState, props) => {
+          delete prevState.minLength;
+          return {
+            stringSchema: ''
+          };
+        });
+      } else {
+        this.setState((prevState, props) => {
+          delete prevState.minLength;
+          return {
+            stringSchema: prevState.stringSchema
+          };
+        });
+      }
     }
   }
 
@@ -413,6 +438,7 @@ class StringSchemaCreator extends React.Component {
       };
       if (!checked) {
         data.enum = '';
+        data.enumNames = '';
       }
       return {
         stringSchemaAddition: data,
@@ -422,15 +448,64 @@ class StringSchemaCreator extends React.Component {
   }
 
   enumInput = (event) => {
+    event.persist();
+    let res = {};
+    let tmpRes = [];
     let tmpValue = event.target.value;
+    if (tmpValue !== '') {
+      res = this.filterCreateArray({
+        value: tmpValue
+      })
+      tmpRes = res.list;
+    } else {
+      tmpRes = [];
+    }
+
     this.setState((prevState, props) => {
       return {
         stringSchemaAddition: {
           ...prevState.stringSchemaAddition,
-          enum: tmpValue
+          enum: tmpRes
         }
       }
     });
+  }
+
+  enumNamesInput = (event) => {
+    event.persist();
+    let res = {};
+    let tmpRes = [];
+    let tmpValue = event.target.value;
+    if (tmpValue !== '') {
+      res = this.filterCreateArray({
+        value: tmpValue
+      })
+      tmpRes = res.list;
+    } else {
+      tmpRes = [];
+    }
+
+    this.setState((prevState, props) => {
+      return {
+        stringSchemaAddition: {
+          ...prevState.stringSchemaAddition,
+          enumNames: tmpRes
+        }
+      }
+    })
+  }
+
+  filterCreateArray (param) {
+    let value = param.value;
+    if (!value) {
+      return {
+        list: []
+      }
+    }
+    let tmpValueList = value.split(',');
+    return {
+      list: tmpValueList
+    }
   }
 
   formatStatusChange = (event) => {
@@ -521,6 +596,36 @@ class StringSchemaCreator extends React.Component {
         }
       };
     });
+  }
+
+  asDefaultChange = (event) => {
+    let checked = event.target.checked;
+    if (!checked) {
+      this.setState((prevState, props) => {
+        delete prevState.stringSchemaAddition.default
+        return {
+          stringSchemaAddition: {
+            ...prevState.stringSchemaAddition
+          }
+        }
+      })
+    }
+    this.setState({
+      asDefault: checked
+    })
+  }
+
+  objectFilter = (obj = {}) => {
+    if (!obj) {
+      return;
+    }
+    let data = {};
+    for (let item of Object.entries(obj)) {
+      if (item[1] !== '') {
+        data[item[0]] = item[1];
+      }
+    }
+    return data;
   }
 
   // * ------------
@@ -622,7 +727,8 @@ class StringSchemaCreator extends React.Component {
             </FormItem>
 
             <FormItem label="default">
-              <Input value={ this.state.stringSchemaAddition.default } onInput={ this.defaultInput }></Input>
+              <Checkbox checked={ this.state.asDefault } onChange={ this.asDefaultChange }>使用default</Checkbox>
+              <Input disabled={ !this.state.asDefault } value={ this.state.stringSchemaAddition.default } onInput={ this.defaultInput }></Input>
             </FormItem>
 
             <FormItem label="最小长度">
@@ -632,6 +738,8 @@ class StringSchemaCreator extends React.Component {
             <FormItem label="enum">
               <Checkbox checked={ this.state.enumStatus } onChange={ this.enumStatusChange }>使用enum</Checkbox>
               <TextArea disabled={ !this.state.enumStatus } value={ this.state.stringSchemaAddition.enum } onChange={ this.enumInput }></TextArea>
+              enumNames:
+              <TextArea disabled={ !this.state.enumStatus } value={ this.state.stringSchemaAddition.enumNames ? this.state.stringSchemaAddition.enumNames.join(',') : '' } onInput={ this.enumNamesInput }></TextArea>
             </FormItem>
 
             <FormItem label="format">
@@ -652,7 +760,7 @@ class StringSchemaCreator extends React.Component {
                     (uiCreator) => {
                       this.uiCreator = uiCreator;
                     }
-                  }></StringUICreator>
+                  } filterCreateArray={this.filterCreateArray}></StringUICreator>
                 </div>
               </FormItem>
             }

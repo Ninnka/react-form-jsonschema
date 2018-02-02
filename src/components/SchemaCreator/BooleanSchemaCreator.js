@@ -156,7 +156,8 @@ class BooleanSchemaCreator extends React.Component {
       }
     });
     this.UIschema.setState({
-      ui: {}
+      ui: {},
+      options: {}
     });
   }
 
@@ -172,6 +173,7 @@ class BooleanSchemaCreator extends React.Component {
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
       data.coverFixedItems = true;
     }
+
     if (this.state.asDefinition) {
       let refData = {
         owner: data.owner,
@@ -185,8 +187,11 @@ class BooleanSchemaCreator extends React.Component {
        this.props.addNewDefinition(data);
     } else {
       delete data.$ref;
-      if (this.UIschema.state && Object.keys(this.UIschema.state.ui).length > 0) {
-        data.ui = this.UIschema.state.ui;
+      if (this.UIschema.state.ui && Object.keys(this.UIschema.state.ui).length > 0) {
+        if (this.UIschema.state.ui.options && Object.keys(this.UIschema.state.ui.options).length < 0) {
+          delete this.UIschema.state.ui.options;
+        }
+        data.ui = this.objectFilter(this.UIschema.state.ui);
       }
       this.props.addNewProperties(data);
     }
@@ -437,6 +442,19 @@ class BooleanSchemaCreator extends React.Component {
         }
       };
     });
+  }
+
+  objectFilter = (obj = {}) => {
+    if (!obj) {
+      return;
+    }
+    let data = {};
+    for (let item of Object.entries(obj)) {
+      if (item[1] !== '') {
+        data[item[0]] = item[1];
+      }
+    }
+    return data;
   }
 
   // * ------------
