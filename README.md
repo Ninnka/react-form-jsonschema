@@ -141,7 +141,7 @@
   - Custom labels for enum fields
   - Custom CSS class names
 
-### 已下特性不支持
+### 以下特性不支持
 
 - Advanced customization
   - Custom validation
@@ -158,6 +158,13 @@
   - Custom descriptions
 
 ## Change Log
+
+### 2018-02-04
+
+- jsonSchema数据预览中加入新功能
+  - 搜索特定项
+  - 全部展开
+  - 全部收起
 
 ### 2018-02-02
 

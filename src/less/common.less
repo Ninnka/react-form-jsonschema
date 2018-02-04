@@ -15,6 +15,12 @@
   .ant-select-dropdown {
     z-index: 1000000;
   }
+  .ant-input-group-addon {
+    min-width: 110px;
+  }
+  .ant-select {
+    min-width: 110px;
+  }
 }
 
 // * ------------
@@ -38,6 +44,9 @@
   }
   .mg-top-middle {
     margin-top: 12px;
+  }
+  .mg-bottom-middle {
+    margin-bottom: 12px;
   }
   .mg-top-thin {
     margin-top: 6px;
@@ -66,6 +75,20 @@
     .flex-item-grow {
       flex-grow: 1;
       flex-shrink: 1;
+    }
+  }
+  .search-btn {
+    cursor: pointer;
+    padding: 0 8px;
+  }
+  .search-btn.primary {
+    &:hover {
+      color: blue;
+    }
+  }
+  .search-btn.danger {
+    &:hover {
+      color: red;
     }
   }
 }
