@@ -85,6 +85,38 @@ class PreviewJsonSchema extends React.Component {
     });
   }
 
+  deleteFilterItemHandle = (param) => {
+    console.log('deleteFilterItemHandle param', param);
+    if (param.name && this.deleteExcludeList.indexOf(param.name) === -1) {
+      this.props.addNewProperties(param.updated_src);
+      utilFunc.messageSuccess({
+        message: '删除成功'
+      });
+      return true;
+    } else {
+      utilFunc.messageError({
+        message: '该属性不能删除'
+      });
+      return false;
+    }
+  }
+
+  editFilterItemHandle = (param) => {
+    console.log('editFilterItemHandle param', param);
+    if (param.name && this.editExcludeList.indexOf(param.name) === -1) {
+      this.props.addNewProperties(param.updated_src);
+      utilFunc.messageSuccess({
+        message: '修改成功'
+      });
+      return true;
+    } else {
+      utilFunc.messageError({
+        message: '该属性不能修改'
+      });
+      return false;
+    }
+  }
+
   // * ------------
 
   searchSelectedTypeChange = (value) => {
@@ -105,36 +137,43 @@ class PreviewJsonSchema extends React.Component {
   resetFilterList = () => {
     this.filterList = [];
     this.setState({
-      filterList: []
+      filterList: [],
+      searchInput: '',
+      searchSelectedType: ''
     });
   }
 
   compuFilter = () => {
+    this.filterList = [];
     if (this.state.searchInput && this.state.searchSelectedType) {
-      switch (this.props.JSONSchema.type) {
-        case 'object':
-          this.compuFilterFromObject(this.props.JSONSchema, this.state.searchSelectedType, this.state.searchInput);
-          break;
-        case 'array':
-          this.compuFilterFromArray(this.props.JSONSchema, this.state.searchSelectedType, this.state.searchInput);
-          break;
-        default:
-          this.compuFilterFromPure(this.props.JSONSchema, this.state.searchSelectedType, this.state.searchInput);
-      }
+      this.compuFilterByType(this.props.JSONSchema);
       this.setState({
         filterList: this.filterList
       });
     }
   }
 
-  compuFilterFromPure = (item, searchType, searchValue) => {
+  compuFilterPure = (item, searchType, searchValue) => {
     if (item[searchType]) {
       String(item[searchType]).indexOf(searchValue) !== -1 && (this.filterList.push(item));
     }
   }
 
+  compuFilterByType = (data) => {
+    switch (data.type) {
+      case 'object':
+        this.compuFilterFromObject(data, this.state.searchSelectedType, this.state.searchInput);
+        break;
+      case 'array':
+        this.compuFilterFromArray(data, this.state.searchSelectedType, this.state.searchInput);
+        break;
+      default:
+        this.compuFilterPure(data, this.state.searchSelectedType, this.state.searchInput);
+    }
+  }
+
   compuFilterFromObject = (object, searchType, searchValue) => {
-    this.compuFilterFromPure(object, this.state.searchSelectedType, this.state.searchInput);
+    this.compuFilterPure(object, this.state.searchSelectedType, this.state.searchInput);
     if (object.properties === undefined || Object.keys(object.properties).length === 0) {
       return;
     }
@@ -144,38 +183,20 @@ class PreviewJsonSchema extends React.Component {
       } else if (item[1].type === 'array') {
         this.compuFilterFromArray(item[1], this.state.searchSelectedType, this.state.searchInput);
       } else {
-        this.compuFilterFromPure(item[1], this.state.searchSelectedType, this.state.searchInput);
+        this.compuFilterPure(item[1], this.state.searchSelectedType, this.state.searchInput);
       }
     }
   }
 
   compuFilterFromArray = (array, searchType, searchValue) => {
-    this.compuFilterFromPure(array, this.state.searchSelectedType, this.state.searchInput);
+    this.compuFilterPure(array, this.state.searchSelectedType, this.state.searchInput);
     if (utilFunc.getPropertyJsType(array.items).indexOf('Array') !== -1 && array.items.length > 0) {
       for (let item of array.items) {
-        switch (item.type) {
-          case 'object':
-            this.compuFilterFromObject(item, this.state.searchSelectedType, this.state.searchInput);
-            break;
-          case 'array':
-            this.compuFilterFromArray(item, this.state.searchSelectedType, this.state.searchInput);
-            break;
-          default:
-            this.compuFilterFromPure(item, this.state.searchSelectedType, this.state.searchInput);
-        }
+        this.compuFilterByType(item);
       }
 
       if (utilFunc.getPropertyJsType(array.additionalItems).indexOf('Object') !== -1 && array.additionalItems.type) {
-        switch (array.additionalItems.type) {
-          case 'object':
-            this.compuFilterFromObject(array.additionalItems, this.state.searchSelectedType, this.state.searchInput);
-            break;
-          case 'array':
-            this.compuFilterFromArray(array.additionalItems, this.state.searchSelectedType, this.state.searchInput);
-            break;
-          default:
-            this.compuFilterFromPure(array.additionalItems, this.state.searchSelectedType, this.state.searchInput);
-        }
+        this.compuFilterByType(array.additionalItems);
       }
     } else {
       this.compuFilterFromObject(array.items, this.state.searchSelectedType, this.state.searchInput);
@@ -231,7 +252,9 @@ class PreviewJsonSchema extends React.Component {
                 }
                 <ReactJson src={ ele }
                            name={ ele.owner !== '' ? ele.key : 'root' }
-                           collapsed={ this.state.collapsed } />
+                           collapsed={ this.state.collapsed }
+                           onDelete={ this.deleteFilterItemHandle }
+                           onEdit={ this.editFilterItemHandle } />
               </div>
             )
           })
