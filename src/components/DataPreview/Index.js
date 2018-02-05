@@ -21,7 +21,8 @@ class DataPreview extends React.Component {
           <TabPane tab="jsonschema" key="1">
             <PreviewJsonSchema JSONSchema={ this.props.JSONSchema }
                                editJsonSchemaData={ this.props.editJsonSchemaData }
-                               deleteJsonSchemaData={ this.props.deleteJsonSchemaData } />
+                               deleteJsonSchemaData={ this.props.deleteJsonSchemaData }
+                               addNewProperties={ this.props.addNewProperties } />
           </TabPane>
           <TabPane tab="uischema" key="2">
             <PreviewUISchema UISchema={ this.props.UISchema } />

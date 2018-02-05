@@ -1,6 +1,8 @@
 # Form2JsonSchema
 
-> ## 一个简单的 [React](http://facebook.github.io/react/) 组件，利用Form表单的形式来构造[JSON schema](http://jsonschema.net/)，UI使用 [Ant Design](https://ant.design/index-cn)。
+> ## 一个简单的 [React](http://facebook.github.io/react/) 组件，利用Form表单的形式来构造[JSON Schema](http://jsonschema.net/)，UI使用 [Ant Design](https://ant.design/index-cn)。
+
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors)
 
 ## Schema
 
@@ -141,7 +143,7 @@
   - Custom labels for enum fields
   - Custom CSS class names
 
-### 已下特性不支持
+### 以下特性不支持
 
 - Advanced customization
   - Custom validation
@@ -158,6 +160,22 @@
   - Custom descriptions
 
 ## Change Log
+
+- 调整添加jsonschema的属性的方法
+- jsonSchema数据预览的搜索功能
+  - 可以对搜索出的项进行删除和修改
+    - 支持key值修改
+    - 搜索的得到的元素只允许删除子元素
+  - 增加可选的搜索类型
+- 修复已知问题
+  - 重置时没有清空input和select
+
+### 2018-02-04
+
+- jsonSchema数据预览中加入新功能
+  - 搜索特定项
+  - 全部展开
+  - 全部收起
 
 ### 2018-02-02
 
