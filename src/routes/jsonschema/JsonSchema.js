@@ -247,6 +247,11 @@ class JsonSchema extends React.Component {
       tmpProperties[newProperty.key] = newProperty;
     }
 
+    // * 如果是通过数据预览中的搜索过滤出的项，并且更改了key值
+    if (options.prune === 'key' && newProperty.oldKey) {
+      delete tmpProperties[newProperty.oldKey];
+    }
+
     // * formData相关start------------
     // // * 如果没有设置default，则再formdata中设置对应的key
     // if (newProperty.type === 'object') {

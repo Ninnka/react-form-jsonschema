@@ -28,7 +28,7 @@ class PreviewJsonSchema extends React.Component {
 
   deleteExcludeList = ['key', 'type', 'properties', 'items'];
 
-  typeOptions = ['key', 'type', 'title', 'description', 'default'];
+  typeOptions = ['key', 'type', 'title', 'description', 'default', 'required', 'enum'];
 
   componentDidMount () {
 
@@ -85,6 +85,32 @@ class PreviewJsonSchema extends React.Component {
     });
   }
 
+  // * ------------
+
+  editFilterItemHandle = (param) => {
+    console.log('editFilterItemHandle param', param);
+    if (param.name && param.name === 'key') {
+      this.props.addNewProperties({
+        ...param.updated_src,
+        oldKey: param.existing_value
+      }, { prune: 'key' });
+      utilFunc.nextTick(() => {
+        this.compuFilter();
+      });
+    } else if (param.name && this.editExcludeList.indexOf(param.name) === -1) {
+      this.props.addNewProperties(param.updated_src);
+      utilFunc.messageSuccess({
+        message: '修改成功'
+      });
+      return true;
+    } else {
+      utilFunc.messageError({
+        message: '该属性不能修改'
+      });
+      return false;
+    }
+  }
+
   deleteFilterItemHandle = (param) => {
     console.log('deleteFilterItemHandle param', param);
     if (param.name && this.deleteExcludeList.indexOf(param.name) === -1) {
@@ -96,22 +122,6 @@ class PreviewJsonSchema extends React.Component {
     } else {
       utilFunc.messageError({
         message: '该属性不能删除'
-      });
-      return false;
-    }
-  }
-
-  editFilterItemHandle = (param) => {
-    console.log('editFilterItemHandle param', param);
-    if (param.name && this.editExcludeList.indexOf(param.name) === -1) {
-      this.props.addNewProperties(param.updated_src);
-      utilFunc.messageSuccess({
-        message: '修改成功'
-      });
-      return true;
-    } else {
-      utilFunc.messageError({
-        message: '该属性不能修改'
       });
       return false;
     }

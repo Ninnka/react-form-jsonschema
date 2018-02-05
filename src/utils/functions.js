@@ -37,6 +37,9 @@ export default {
   getPropertyJsType: (property) => {
     return Object.prototype.toString.call(property);
   },
+  nextTick: (callback) => {
+    Promise.resolve().then(callback);
+  },
   messageSuccess: (param = {
     message: '成功'
   }) => {
