@@ -21,7 +21,13 @@ const withCompuListHighOrder = (WrappedComponent) => {
       }
     }
 
-    state = {}
+    state = {
+      // objectList: [],
+      // arrayList: [],
+      // stringList: [],
+      // numberList: [],
+      // booleanList: []
+    }
 
     propsHOC = {}
 
@@ -45,10 +51,13 @@ const withCompuListHighOrder = (WrappedComponent) => {
           tmpRefList.push(tmpDefList[index]);
         }
       }
+      let res = this.compuSameTypeList();
+      console.log('compuSameTypeList res:', res);
       return {
         ownerList: tmpOwnerList,
         defList: tmpDefList,
-        refList: tmpRefList
+        refList: tmpRefList,
+        sameTypeListObj: res
       }
     }
 
@@ -191,9 +200,170 @@ const withCompuListHighOrder = (WrappedComponent) => {
       return tmpDefList;
     }
 
+    // * ------------
+
+    compuSameTypeList = (item) => {
+      let tmpListCol = {
+        tmpObjectList: [],
+        tmpArrayList: [],
+        tmpStringList: [],
+        tmpNumberList: [],
+        tmpBooleanList: []
+      };
+      let res = this.compuSameTypeListByType(this.props.jsonSchema);
+      tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+      tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+      tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+      tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+      tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+      return tmpListCol;
+    }
+
+    compuSameTypeListFromObject = (data) => {
+      let tmpListCol = {
+        tmpObjectList: [],
+        tmpArrayList: [],
+        tmpStringList: [],
+        tmpNumberList: [],
+        tmpBooleanList: []
+      };
+      if (data.properties && Object.keys(data.properties).length > 0) {
+        let propsList = Object.entries(data.properties);
+        for (let item of propsList) {
+          let res = this.compuSameTypeListByType(item[1]);
+          tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+          tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+          tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+          tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+          tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+          // switch (item.type) {
+          //   case 'object':
+          //     tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+          //     break;
+          //   case 'array':
+          //     tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+          //     break;
+          //   case 'string':
+          //     tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+          //     break;
+          //   case 'number':
+          //     tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+          //     break;
+          //   case 'boolean':
+          //     tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+          //     break;
+          //   default:
+          //     break;
+          // }
+        }
+      }
+      return tmpListCol;
+    }
+
+    compuSameTypeListFromArray = (data) => {
+      let tmpListCol = {
+        tmpObjectList: [],
+        tmpArrayList: [],
+        tmpStringList: [],
+        tmpNumberList: [],
+        tmpBooleanList: []
+      };
+      if (data.items && utilFunc.getPropertyJsType(data.items).indexOf('Array') !== -1 && data.items.length > 0) {
+        // * 如果items是数组并且长度大于0
+        for (let item of data.items) {
+          let res = this.compuSameTypeListByType(item);
+          tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+          tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+          tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+          tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+          tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+          // switch (item.type) {
+          //   case 'object':
+          //     tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+          //     break;
+          //   case 'array':
+          //     tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+          //     break;
+          //   case 'string':
+          //     tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+          //     break;
+          //   case 'number':
+          //     tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+          //     break;
+          //   case 'boolean':
+          //     tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+          //     break;
+          //   default:
+          //     break;
+          // }
+        }
+        // * 判断是否有additionalItems
+        if (data.additionalItems && utilFunc.getPropertyJsType(data.additionalItems).indexOf('Object') !== -1 && data.additionalItems.type) {
+          let res = this.compuSameTypeListByType(data.additionalItems);
+          tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+          tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+          tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+          tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+          tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+        }
+      } else if (data.items && utilFunc.getPropertyJsType(data.items).indexOf('Object') !== -1) {
+        let res = this.compuSameTypeListByType(data.items);
+        tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+        tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+        tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+        tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+        tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+      }
+      return tmpListCol;
+    }
+
+    compuSameTypeListByType = (item) => {
+      let tmpListCol = {
+        tmpObjectList: [],
+        tmpArrayList: [],
+        tmpStringList: [],
+        tmpNumberList: [],
+        tmpBooleanList: []
+      };
+      let res = null;
+      switch (item.type) {
+        case 'object':
+          tmpListCol.tmpObjectList.push(item);
+          res = this.compuSameTypeListFromObject(item);
+          break;
+        case 'array':
+          tmpListCol.tmpArrayList.push(item);
+          res = this.compuSameTypeListFromArray(item);
+          break;
+        case 'string':
+          console.log('1');
+          tmpListCol.tmpStringList.push(item);
+          break;
+        case 'number':
+          tmpListCol.tmpNumberList.push(item);
+          break;
+        case 'boolean':
+          tmpListCol.tmpBooleanList.push(item);
+          break;
+        default:
+          break;
+      }
+      if (res) {
+        tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+        tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+        tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+        tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+        tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+      }
+      console.log('tmpListCol', tmpListCol);
+      return tmpListCol;
+    }
+
+    // * ------------
+
     render () {
       return (
-        <WrappedComponent { ...this.propsHOC } { ...this.props }></WrappedComponent>
+        <WrappedComponent { ...this.propsHOC } { ...this.props } />
       )
     }
   }
