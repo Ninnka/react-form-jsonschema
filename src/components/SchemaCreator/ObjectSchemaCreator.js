@@ -25,6 +25,7 @@ const TextArea = Input.TextArea;
 class ObjectSchemaCreator extends React.Component {
 
   state = {
+    objectTypeList: [],
     ownerList: [],
     defList: [],
     refList: [],
@@ -33,6 +34,9 @@ class ObjectSchemaCreator extends React.Component {
     coverFixedItems: false,
     refStatus: false,
     asDefinition: false,
+    editPattern: false,
+    editTargetIndex: '',
+    editTargetKey: '',
     newDep: {
       key: '',
       value: ''
@@ -58,7 +62,8 @@ class ObjectSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      objectTypeList: res.sameTypeListObj.tmpObjectList
     });
   }
 
@@ -68,7 +73,8 @@ class ObjectSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      objectTypeList: res.sameTypeListObj.tmpObjectList
     });
   }
 
@@ -81,6 +87,9 @@ class ObjectSchemaCreator extends React.Component {
       coverFixedItems: false,
       refStatus: false,
       asDefinition: false,
+      editPattern: false,
+      editTargetIndex: '',
+      editTargetKey: '',
       newDep: {
         key: '',
         value: ''
@@ -194,6 +203,7 @@ class ObjectSchemaCreator extends React.Component {
     } else {
       // * 正常模式
       delete data.$ref;
+      delete data.defOwner;
       // * 如果有设置ui，则将ui添加到UISchema
       if (Object.keys(this.uiCreator.state.ui).length > 0) {
         data.ui = this.uiCreator.state.ui;
@@ -260,6 +270,24 @@ class ObjectSchemaCreator extends React.Component {
         }
       };
     });
+  }
+
+  // * 编辑模式的变化
+  editPatternChange = (event) => {
+    let checked = event.target.checked;
+    this.setState({
+      editPattern: checked
+    });
+  }
+
+  // * 编辑对象变化
+  editTargetChange = (value) => {
+    this.setState((prevState, props) => {
+      return {
+        editTargetIndex: value,
+        editTargetKey: prevState.objectTypeList[value].key
+      }
+    })
   }
 
   keyInput = (event) => {
@@ -605,26 +633,28 @@ class ObjectSchemaCreator extends React.Component {
     return (
       <Form>
 
-        <FormItem label="$ref">
-          <Checkbox checked={this.state.refStatus} onChange={
-            this.refStatusChange
-          }>
-            引用definition
-          </Checkbox>
-          { this.state.refStatus &&
-            <Select allowClear value={ this.state.objectSchema.$ref } onChange={ this.refChange }>
-              {
-                this.state.refList.map((ele, index, arr) => {
-                  return (
-                    <Option key={ ele.path + index } value={ index }>
-                      { ele.path }
-                    </Option>
-                  )
-                })
-              }
-            </Select>
-          }
-        </FormItem>
+        { !this.state.editPattern &&
+          <FormItem label="$ref">
+            <Checkbox checked={this.state.refStatus} onChange={
+              this.refStatusChange
+            }>
+              引用definition
+            </Checkbox>
+            { this.state.refStatus &&
+              <Select allowClear value={ this.state.objectSchema.$ref } onChange={ this.refChange }>
+                {
+                  this.state.refList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.path + index } value={ index }>
+                        { ele.path }
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
+          </FormItem>
+        }
 
         <FormItem label="key">
           <Input value={ this.state.objectSchema.key } onInput={ this.keyInput }></Input>
@@ -632,7 +662,7 @@ class ObjectSchemaCreator extends React.Component {
 
         { !this.state.asDefinition &&
           <FormItem label="选择所属对象">
-            <Select allowClear value={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
+            <Select disabled={ this.state.editPattern } allowClear value={ this.state.objectSchema.owner } onChange={ this.ownerChange }>
               {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (
@@ -658,19 +688,43 @@ class ObjectSchemaCreator extends React.Component {
 
         { !this.state.refStatus &&
           <div>
-            <FormItem label="选择创建的definition的位置">
-              <Checkbox checked={this.state.asDefinition} onChange={
-                  this.defStatusChange
-                }>
-                  创建为definition，选择definition的创建位置
-              </Checkbox>
-              { this.state.asDefinition &&
-                <Select value={ this.state.objectSchema.defOwner } onChange={ this.defOwnerChange }>
-                  {
-                    this.state.defList.map((ele, index, arr) => {
+            { !this.state.editPattern &&
+              <FormItem label="选择创建的definition的位置">
+                <Checkbox checked={this.state.asDefinition} onChange={
+                    this.defStatusChange
+                  }>
+                    创建为definition，选择definition的创建位置
+                </Checkbox>
+                { this.state.asDefinition &&
+                  <Select value={ this.state.objectSchema.defOwner } onChange={ this.defOwnerChange }>
+                    {
+                      this.state.defList.map((ele, index, arr) => {
+                        return (
+                          <Option key={ ele.path + index } value={ index }>
+                            { ele.path }
+                          </Option>
+                        )
+                      })
+                    }
+                  </Select>
+                }
+              </FormItem>
+            }
+
+            <FormItem label="编辑模式">
+              <Checkbox checked={ this.state.editPattern } onChange={ this.editPatternChange }>编辑模式</Checkbox>
+              { this.state.editPattern &&
+                <Select value={ this.state.editTargetIndex } onChange={ this.editTargetChange }>
+                  { this.state.objectTypeList && this.state.objectTypeList.length >0 &&
+                    this.state.objectTypeList.map((ele, index, arr) => {
                       return (
-                        <Option key={ ele.path + index } value={ index }>
-                          { ele.path }
+                        <Option key={ ele.key } value={ index } style={ { paddingLeft: '150px' } }>
+                          <span style={ {position: 'absolute', top: 0, left: '16px', lineHeight: '32px'} }>
+                            { 'key: ' + ele.key }
+                          </span>
+                          <span>
+                            owner: { ele.owner ? ele.owner : 'JSONSchema' }
+                          </span>
                         </Option>
                       )
                     })
