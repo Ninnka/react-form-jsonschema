@@ -89,8 +89,14 @@ class BooleanSchemaCreator extends React.Component {
 
   confirmForm = () => {
     console.log('confirmForm');
+    let booleanSchema = this.objectFilter(this.state.booleanSchema);
+    if (!this.state.asCreateDefinition) {
+      booleanSchema.defOwner && delete booleanSchema.defOwner;
+    } else {
+      booleanSchema.owner !== undefined && delete booleanSchema.owner;
+    }
     let data = {
-      ...this.state.booleanSchema,
+      ...booleanSchema,
       asDefinition: this.state.asDefinition,
       type: 'boolean'
     };
@@ -296,7 +302,7 @@ class BooleanSchemaCreator extends React.Component {
     }
     let data = {};
     for (let item of Object.entries(obj)) {
-      if (item[1] !== '') {
+      if (item[1] !== '' || item[0] === 'owner') {
         data[item[0]] = item[1];
       }
     }

@@ -135,6 +135,11 @@ class StringSchemaCreator extends React.Component {
 
   submitForm = () => {
     let stringSchema = this.objectFilter(this.state.stringSchema);
+    if (!this.state.asDefinition) {
+      stringSchema.defOwner && delete stringSchema.defOwner
+    } else {
+      stringSchema.owner !== undefined && delete stringSchema.owner
+    }
     let data = {
       ...stringSchema,
       type: 'string'
@@ -462,7 +467,7 @@ class StringSchemaCreator extends React.Component {
     }
     let data = {};
     for (let item of Object.entries(obj)) {
-      if (item[1] !== '') {
+      if (item[1] !== '' || item[0] === 'owner') {
         data[item[0]] = item[1];
       }
     }

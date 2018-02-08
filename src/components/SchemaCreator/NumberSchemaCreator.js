@@ -100,7 +100,9 @@ class NumberSchemaCreator extends React.Component {
         key: '',
         title: '',
         description: '',
-        owner: ''
+        owner: '',
+        $ref: '',
+        defOwner: 'definitions'
       },
       numberSchemaAddition: {
         default: '',
@@ -134,7 +136,7 @@ class NumberSchemaCreator extends React.Component {
     }
     let data = {};
     for (let item of Object.entries(obj)) {
-      if (item[1] !== '') {
+      if (item[1] !== ''|| item[0] === 'owner') {
         data[item[0]] = item[1];
       }
     }
@@ -144,6 +146,11 @@ class NumberSchemaCreator extends React.Component {
   submitForm = () => {
     let numberSchemaAddition = this.objectFilter(this.state.numberSchemaAddition);
     let numberSchema = this.objectFilter(this.state.numberSchema);
+    if (!this.state.asCreateDefinition) {
+      numberSchema.defOwner && delete numberSchema.defOwner;
+    } else {
+      numberSchema.owner !== undefined && delete numberSchema.owner;
+    }
     let data = {
       ...numberSchemaAddition,
       ...numberSchema,
