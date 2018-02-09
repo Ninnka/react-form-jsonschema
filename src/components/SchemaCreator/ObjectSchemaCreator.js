@@ -140,8 +140,9 @@ class ObjectSchemaCreator extends React.Component {
     let data = {
       ...this.state.objectSchema,
       type: 'object',
-      properties: {}
+      // properties: {}
     };
+    data.properties = this.state.editPattern ? (this.state.objectTypeList[this.state.editTargetIndex].properties) : ({});
     if (this.state.ownerTypeStatus === 'array' && this.state.asFixedItems) {
       data.asFixedItems = true;
     } else if (this.state.ownerTypeStatus === 'array' && this.state.coverFixedItems) {
@@ -208,6 +209,7 @@ class ObjectSchemaCreator extends React.Component {
       if (Object.keys(this.uiCreator.state.ui).length > 0) {
         data.ui = this.uiCreator.state.ui;
       }
+      this.state.editPattern && (data.editPattern = true);
       this.props.addNewProperties(data);
     }
     setTimeout(this.resetForm, 0);
@@ -272,22 +274,124 @@ class ObjectSchemaCreator extends React.Component {
     });
   }
 
-  // * 编辑模式的变化
+  // * 编辑模式的变化(每次点击都会清空表单中已经填写的值)
   editPatternChange = (event) => {
     let checked = event.target.checked;
-    this.setState({
-      editPattern: checked
+    this.setState((prevState, props) => {
+      let tmpData = {};
+      for (let item of Object.keys(prevState.objectSchema)) {
+        tmpData[item] = '';
+      }
+      return {
+        editPattern: checked,
+        objectSchema: tmpData
+      }
     });
   }
 
   // * 编辑对象变化
   editTargetChange = (value) => {
     this.setState((prevState, props) => {
+      let editTarget = value !== undefined ? prevState.objectTypeList[value] : null;
+      let tmpObjectSchema = {
+        ...prevState.objectSchema
+      };
+
+      // * 获取目标对象的值
+      for (let item of Object.keys(tmpObjectSchema)) {
+        tmpObjectSchema[item] = editTarget !== null && editTarget[item] !== undefined ? editTarget[item] : '';
+      }
+
+      let newDependencies = [];
+      let schemaDepList = [];
+      // * 如果选中的目标有dependencies
+      if (editTarget.dependencies) {
+        for (let dependency of Object.entries(editTarget.dependencies)) {
+          // * properties dependencies
+          utilFunc.getPropertyJsType(dependency[1]).indexOf('Array') !== -1 && (
+            newDependencies.push(this.editTargetPropDependency(dependency))
+          );
+          // * schema dependencies
+          utilFunc.getPropertyJsType(dependency[1]).indexOf('Object') !== -1 && (
+            schemaDepList.push(this.editTargetSchemaDependency(dependency))
+          );
+        }
+      }
+
+      // * 如果选中的目标有$ref属性
+      if (editTarget.$ref) {
+        // * 转换为$ref模式
+      }
+
       return {
-        editTargetIndex: value,
-        editTargetKey: prevState.objectTypeList[value].key
+        editTargetIndex: value !== undefined ? value : '',
+        editTargetKey: editTarget !== null ? editTarget.key : '',
+        objectSchema: tmpObjectSchema,
+        newDependencies,
+        schemaDepList
       }
     })
+  }
+
+  // * 编辑模式的对象的dependency为props dependency时
+  editTargetPropDependency = (dependency) => {
+    return {
+      key: dependency[0],
+      value: dependency[1] ? dependency[1] : []
+    };
+  }
+
+  // * 编辑模式的对象的dependency为schema dependency时
+  editTargetSchemaDependency = (dependency) => {
+    let tmpDepItemOneOfList = [];
+    let tmpId = utilFunc.createRandomId();
+    let tmpKey = dependency[0];
+    let tmpNewDep = {
+      description: '',
+      key: '',
+      type: ''
+    };
+    let tmpNewOneOfDep = {
+      enum: [],
+      properties: {},
+      required: []
+    };
+    let tmpNewOneOfDepProp = {
+      key: '',
+      type: ''
+    };
+    let tmpProperties = {
+
+    };
+    let tmpRequired = [];
+    let tmpUseOneOfDep = false;
+
+    if (!dependency[1].oneOf) {
+      // * normal模式schema dependency
+      tmpUseOneOfDep = false;
+      // * 创建properties对象
+      for (let item of Object.entries(dependency[1].properties)) {
+        tmpProperties[item[0]] = item[1];
+      }
+      // * 创建required
+      tmpRequired = dependency[1].required;
+    } else {
+      // * oneof模式schema dependency
+      tmpUseOneOfDep = true;
+      tmpDepItemOneOfList = dependency[1].oneOf;
+    }
+
+    return {
+      depItemOneOfList: tmpDepItemOneOfList,
+      id: tmpId,
+      key: tmpKey,
+      newDep: tmpNewDep,
+      newOneOfDep: tmpNewOneOfDep,
+      newOneOfDepProp: tmpNewOneOfDepProp,
+      properties: tmpProperties,
+      required: tmpRequired,
+      useOneOfDep: tmpUseOneOfDep
+    };
   }
 
   keyInput = (event) => {
@@ -592,6 +696,13 @@ class ObjectSchemaCreator extends React.Component {
         required: data[index].newOneOfDep.required
       });
 
+      // * 清空子表单值
+      data[index].newOneOfDep = {
+        properties: {},
+        required: [],
+        enum: []
+      };
+
       return {
         schemaDepList: data
       };
@@ -714,17 +825,17 @@ class ObjectSchemaCreator extends React.Component {
             <FormItem label="编辑模式">
               <Checkbox checked={ this.state.editPattern } onChange={ this.editPatternChange }>编辑模式</Checkbox>
               { this.state.editPattern &&
-                <Select value={ this.state.editTargetIndex } onChange={ this.editTargetChange }>
+                <Select allowClear value={ this.state.editTargetKey } onChange={ this.editTargetChange }>
                   { this.state.objectTypeList && this.state.objectTypeList.length >0 &&
                     this.state.objectTypeList.map((ele, index, arr) => {
                       return (
-                        <Option key={ ele.key } value={ index } style={ { paddingLeft: '150px' } }>
-                          <span style={ {position: 'absolute', top: 0, left: '16px', lineHeight: '32px'} }>
+                        <Option key={ ele.key } value={ index }>
+                          <div>
                             { 'key: ' + ele.key }
-                          </span>
-                          <span>
+                          </div>
+                          <div>
                             owner: { ele.owner ? ele.owner : 'JSONSchema' }
-                          </span>
+                          </div>
                         </Option>
                       )
                     })

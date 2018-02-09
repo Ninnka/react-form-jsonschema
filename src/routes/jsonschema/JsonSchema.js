@@ -204,17 +204,11 @@ class JsonSchema extends React.Component {
     }
 
     // * 将新建的属性加入到目标位置
-    if (
-      tmpProperties
-      && tmpProperties.type === 'object'
-      && tmpProperties.properties
-    ) {
+    if (tmpProperties && tmpProperties.type === 'object' && tmpProperties.properties) {
+      // * 新增的位置的owner是object
       tmpProperties.properties[newProperty.key] = newProperty;
-    } else if (
-      tmpProperties
-      && tmpProperties.type === 'array'
-      && newProperty.asFixedItems
-    ) {
+    } else if (tmpProperties && tmpProperties.type === 'array' && newProperty.asFixedItems) {
+      // * 新增的位置的owner是array，并且限定为fixedItems
       // delete newProperty.asFixedItems;
       if (Object.prototype.toString.call(tmpProperties.items).indexOf('Object') !== -1) {
         Object.keys(tmpProperties.items).length > 0 && (tmpProperties.additionalItems = tmpProperties.items);
@@ -226,18 +220,13 @@ class JsonSchema extends React.Component {
         tmpProperties.items = [];
         tmpProperties.items.push(newProperty);
       }
-    } else if (
-      tmpProperties
-      && tmpProperties.type === 'array'
-      && newProperty.coverFixedItems
-    ) {
+    } else if (tmpProperties && tmpProperties.type === 'array' && newProperty.coverFixedItems) {
+      // * 新增的位置的owner是array，并且限定为items
       delete newProperty.coverFixedItems;
       delete tmpProperties.additionalItems;
       tmpProperties.items = newProperty;
-    } else if (
-      tmpProperties
-      && tmpProperties.type === 'array'
-    ) {
+    } else if (tmpProperties && tmpProperties.type === 'array') {
+      // * 新增的位置的owner是array，无限定，根据已由的属性判断设置
       if (Object.prototype.toString.call(tmpProperties.items).indexOf('Array') !== -1) {
         tmpProperties.additionalItems = newProperty;
       } else {
