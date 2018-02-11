@@ -270,36 +270,24 @@ const withCompuListHighOrder = (WrappedComponent) => {
       };
       if (data.items && utilFunc.getPropertyJsType(data.items).indexOf('Array') !== -1 && data.items.length > 0) {
         // * 如果items是数组并且长度大于0
-        for (let item of data.items) {
-          let res = this.compuSameTypeListByType(item);
+        let tmpLen = data.items.length;
+        for (let i = 0; i < tmpLen; i++) {
+          console.log('data.items[i]', data.items[i]);
+          let res = this.compuSameTypeListByType(data.items[i], {
+            itemsArray: true,
+            idx: i
+          });
           tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
           tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
           tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
           tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
           tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
-          // switch (item.type) {
-          //   case 'object':
-          //     tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
-          //     break;
-          //   case 'array':
-          //     tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
-          //     break;
-          //   case 'string':
-          //     tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
-          //     break;
-          //   case 'number':
-          //     tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
-          //     break;
-          //   case 'boolean':
-          //     tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
-          //     break;
-          //   default:
-          //     break;
-          // }
         }
         // * 判断是否有additionalItems
         if (data.additionalItems && utilFunc.getPropertyJsType(data.additionalItems).indexOf('Object') !== -1 && data.additionalItems.type) {
-          let res = this.compuSameTypeListByType(data.additionalItems);
+          let res = this.compuSameTypeListByType(data.additionalItems, {
+            additionalItemsObject: true
+          });
           tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
           tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
           tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
@@ -307,7 +295,9 @@ const withCompuListHighOrder = (WrappedComponent) => {
           tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
         }
       } else if (data.items && utilFunc.getPropertyJsType(data.items).indexOf('Object') !== -1) {
-        let res = this.compuSameTypeListByType(data.items);
+        let res = this.compuSameTypeListByType(data.items, {
+          itemsObject: true
+        });
         tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
         tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
         tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
@@ -317,7 +307,7 @@ const withCompuListHighOrder = (WrappedComponent) => {
       return tmpListCol;
     }
 
-    compuSameTypeListByType = (item) => {
+    compuSameTypeListByType = (item, options = {}) => {
       let tmpListCol = {
         tmpObjectList: [],
         tmpArrayList: [],
@@ -326,24 +316,38 @@ const withCompuListHighOrder = (WrappedComponent) => {
         tmpBooleanList: []
       };
       let res = null;
+
+      let tmpItem = {
+        ...item
+      };
+
+      let selfPath = '';
+      options.itemsArray && (selfPath = this.getItemsArrSchemaMemberSelfPath(item, options.idx));
+      options.itemsObject && (selfPath = this.getItemsObjSchemaMemberSelfPath(item));
+      options.additionalItemsObject && (selfPath = this.getadditionalItemsObjSchemaMemberSelfPath(item));
+      selfPath && (tmpItem.selfPath = selfPath);
+
+      let uis = this.props.getPropertiesUISchema(tmpItem);
+      tmpItem.ui = uis ? uis : {};
+
       switch (item.type) {
         case 'object':
-          tmpListCol.tmpObjectList.push(item);
+          tmpListCol.tmpObjectList.push(tmpItem);
+          console.log('object tmpObject', tmpItem);
           res = this.compuSameTypeListFromObject(item);
           break;
         case 'array':
-          tmpListCol.tmpArrayList.push(item);
+          tmpListCol.tmpArrayList.push(tmpItem);
           res = this.compuSameTypeListFromArray(item);
           break;
         case 'string':
-          console.log('1');
-          tmpListCol.tmpStringList.push(item);
+          tmpListCol.tmpStringList.push(tmpItem);
           break;
         case 'number':
-          tmpListCol.tmpNumberList.push(item);
+          tmpListCol.tmpNumberList.push(tmpItem);
           break;
         case 'boolean':
-          tmpListCol.tmpBooleanList.push(item);
+          tmpListCol.tmpBooleanList.push(tmpItem);
           break;
         default:
           break;
@@ -357,6 +361,21 @@ const withCompuListHighOrder = (WrappedComponent) => {
       }
       console.log('tmpListCol', tmpListCol);
       return tmpListCol;
+    }
+
+    // * 如果是是在type为array类型的成员的子成员，固定key为items，items是数组
+    getItemsArrSchemaMemberSelfPath = (item, i) => {
+      return item.owner + '~/~items~/~' + i
+    }
+
+    // * 如果是是在type为array类型的成员的子成员，固定key为items，items是对象
+    getItemsObjSchemaMemberSelfPath = (item) => {
+      return item.owner + '~/~items'
+    }
+
+    // * 如果是是在type为array类型的成员的子成员，固定key为additionalItems，additionalItems是对象
+    getadditionalItemsObjSchemaMemberSelfPath = (item) => {
+      return item.owner + '~/~additionalItems'
     }
 
     // * ------------
