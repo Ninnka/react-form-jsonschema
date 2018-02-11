@@ -212,7 +212,10 @@ class ObjectSchemaCreator extends React.Component {
       this.state.editPattern && (data.editPattern = true);
       this.props.addNewProperties(data);
     }
-    setTimeout(this.resetForm, 0);
+    // setTimeout(this.resetForm, 0);
+    utilFunc.nextTick(() => {
+      this.resetForm();
+    });
   }
 
   // * ------------
@@ -284,7 +287,11 @@ class ObjectSchemaCreator extends React.Component {
       }
       return {
         editPattern: checked,
-        objectSchema: tmpData
+        editTargetIndex: '',
+        editTargetKey: '',
+        objectSchema: tmpData,
+        newDependencies: [],
+        schemaDepList: [],
       }
     });
   }
@@ -292,6 +299,7 @@ class ObjectSchemaCreator extends React.Component {
   // * 编辑对象变化
   editTargetChange = (value) => {
     this.setState((prevState, props) => {
+      let resData = {};
       let editTarget = value !== undefined ? prevState.objectTypeList[value] : null;
       let tmpObjectSchema = {
         ...prevState.objectSchema
@@ -305,7 +313,7 @@ class ObjectSchemaCreator extends React.Component {
       let newDependencies = [];
       let schemaDepList = [];
       // * 如果选中的目标有dependencies
-      if (editTarget.dependencies) {
+      if (editTarget && editTarget.dependencies) {
         for (let dependency of Object.entries(editTarget.dependencies)) {
           // * properties dependencies
           utilFunc.getPropertyJsType(dependency[1]).indexOf('Array') !== -1 && (
@@ -319,16 +327,20 @@ class ObjectSchemaCreator extends React.Component {
       }
 
       // * 如果选中的目标有$ref属性
-      if (editTarget.$ref) {
+      if (editTarget && editTarget.$ref) {
         // * 转换为$ref模式
+        tmpObjectSchema.$ref = editTarget.$ref;
+        resData.refStatus = true;
       }
 
+      resData.editTargetIndex = value !== undefined ? value : '';
+      resData.editTargetKey = editTarget !== null ? editTarget.key : '';
+      resData.objectSchema = tmpObjectSchema;
+      resData.newDependencies = newDependencies;
+      resData.schemaDepList = schemaDepList;
+
       return {
-        editTargetIndex: value !== undefined ? value : '',
-        editTargetKey: editTarget !== null ? editTarget.key : '',
-        objectSchema: tmpObjectSchema,
-        newDependencies,
-        schemaDepList
+        ...resData
       }
     })
   }
@@ -1049,7 +1061,12 @@ class ObjectSchemaCreator extends React.Component {
                   (uiCreator) => {
                     this.uiCreator = uiCreator;
                   }
-                }></ObjectUICreator>
+                } uiFromProps={
+                  this.state.editPattern
+                  && this.state.objectTypeList[this.state.editTargetIndex]
+                  && this.state.objectTypeList[this.state.editTargetIndex].ui
+                  ? this.state.objectTypeList[this.state.editTargetIndex].ui : {}
+                } />
               </div>
             </FormItem>
           </div>

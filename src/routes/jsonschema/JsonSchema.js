@@ -525,6 +525,46 @@ class JsonSchema extends React.Component {
 
   // * ------------
 
+  getPropertiesUISchema = (jsonSchemaItem) => {
+    let { owner: owners, key: selfKey } = jsonSchemaItem;
+    let hasSelfPath = jsonSchemaItem.selfPath ? true : false;
+    owners = hasSelfPath ? jsonSchemaItem.selfPath : owners;
+    console.log('getPropertiesUISchema owners', owners);
+    let resUI = {};
+    // * 如果owner为空，则属性是在uischema的根目录
+    if (owners === '' && !hasSelfPath) {
+      for (let item of Object.entries(this.state.UISchema)) {
+        let uiNames = item[0] ? item[0].split(':') : '';
+        let uiName = uiNames[uiNames.length - 1];
+        resUI[uiName] = item[1];
+      }
+      console.log('getPropertiesUISchema e resUI', resUI);
+      return resUI;
+    }
+    // * owner不为空，则属性不在uischema的根目录
+    let ownerList = owners ? owners.split('~/~') : '';
+
+    // * UISchema遍历指针
+    let tmpUISchema = this.state.UISchema;
+    let schemaPointer = tmpUISchema;
+
+    for (let owner of ownerList) {
+      if (owner !== 'root' && schemaPointer && schemaPointer[owner]) {
+        schemaPointer = schemaPointer[owner];
+      }
+    }
+    !hasSelfPath && schemaPointer && schemaPointer[selfKey] && (schemaPointer = schemaPointer[selfKey]);
+    for (let item of Object.entries(schemaPointer)) {
+      let uiNames = item[0] ? item[0].split(':') : '';
+      let uiName = uiNames[uiNames.length - 1];
+      resUI[uiName] = item[1];
+    }
+    console.log('getPropertiesUISchema noe resUI', resUI);
+    return resUI;
+  }
+
+  // * ------------
+
   addNewDefinition = (newDefinition) => {
     delete newDefinition.ui;
 
@@ -702,6 +742,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
+              } getPropertiesUISchema={
+                this.getPropertiesUISchema
               } />
             </div>
           </TabPane>
@@ -717,6 +759,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
+              } getPropertiesUISchema={
+                this.getPropertiesUISchema
               } />
             </div>
           </TabPane>
@@ -732,6 +776,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
+              } getPropertiesUISchema={
+                this.getPropertiesUISchema
               } />
             </div>
           </TabPane>
@@ -747,6 +793,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
+              } getPropertiesUISchema={
+                this.getPropertiesUISchema
               } />
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
@@ -761,6 +809,8 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
+              } getPropertiesUISchema={
+                this.getPropertiesUISchema
               } />
             </div>
           </TabPane>

@@ -29,6 +29,10 @@ const confirm = Modal.confirm;
 class ArraySchemaCreator extends React.Component {
 
   state = {
+    arrayTypeList: [],
+    editPattern: false,
+    editTargetIndex: '',
+    editTargetKey: '',
     additionalItemsStatus: false,
     fixedItemStatus: false,
     itemEnumStatus: false,
@@ -86,7 +90,8 @@ class ArraySchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      arrayTypeList: res.sameTypeListObj.tmpArrayList
     });
   }
 
@@ -96,7 +101,8 @@ class ArraySchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      arrayTypeList: res.sameTypeListObj.tmpArrayList
     });
   }
 
@@ -104,6 +110,9 @@ class ArraySchemaCreator extends React.Component {
 
   resetForm = () => {
     this.setState({
+      editPattern: false,
+      editTargetIndex: '',
+      editTargetKey: '',
       additionalItemsStatus: false,
       fixedItemStatus: false,
       itemEnumStatus: false,
@@ -217,6 +226,7 @@ class ArraySchemaCreator extends React.Component {
       tmpData.$ref && this.props.addNewProperties(tmpData);
     } else {
       delete data.$ref;
+      delete data.defOwner;
       // * 如果有设置ui，则将ui添加到UISchema
       if (Object.keys(this.uiCreator.state.ui).length > 0) {
         data.ui = this.uiCreator.state.ui;
@@ -231,6 +241,77 @@ class ArraySchemaCreator extends React.Component {
     }
     setTimeout(this.resetForm, 0);
   }
+
+  // * ------------
+
+    // * 编辑模式的变化(每次点击都会清空表单中已经填写的值)
+    editPatternChange = (event) => {
+      let checked = event.target.checked;
+      this.setState((prevState, props) => {
+        let tmpData = {};
+        for (let item of Object.keys(prevState.arraySchema)) {
+          tmpData[item] = '';
+        }
+        return {
+          editPattern: checked,
+          editTargetIndex: '',
+          editTargetKey: '',
+          arraySchema: tmpData,
+          newDependencies: []
+        }
+      });
+    }
+
+    // * 编辑对象变化
+    editTargetChange = (value) => {
+      this.setState((prevState, props) => {
+        let resData = {};
+        let editTarget = value !== undefined ? prevState.arrayTypeList[value] : null;
+        let tmpArraySchema = {
+          ...prevState.arraySchema
+        };
+
+        // * 获取目标对象的值
+        for (let item of Object.keys(tmpArraySchema)) {
+          tmpArraySchema[item] = editTarget !== null && editTarget[item] !== undefined ? editTarget[item] : '';
+        }
+
+        let newDependencies = [];
+        // * 如果选中的目标有dependencies
+        if (editTarget && editTarget.dependencies) {
+          for (let dependency of Object.entries(editTarget.dependencies)) {
+            // * properties dependencies
+            utilFunc.getPropertyJsType(dependency[1]).indexOf('Array') !== -1 && (
+              newDependencies.push(this.editTargetPropDependency(dependency))
+            );
+          }
+        }
+
+        // * 如果选中的目标有$ref属性
+        if (editTarget && editTarget.$ref) {
+          // * 转换为$ref模式
+          tmpArraySchema.$ref = editTarget.$ref;
+          resData.refStatus = true;
+        }
+
+        resData.editTargetIndex = value !== undefined ? value : '';
+        resData.editTargetKey = editTarget !== null ? editTarget.key : '';
+        resData.arraySchema = tmpArraySchema;
+        resData.newDependencies = newDependencies;
+
+        return {
+          ...resData
+        }
+      })
+    }
+
+    // * 编辑模式的对象的dependency为props dependency时
+    editTargetPropDependency = (dependency) => {
+      return {
+        key: dependency[0],
+        value: dependency[1] ? dependency[1] : []
+      };
+    }
 
   // * ------------
 
@@ -584,26 +665,28 @@ class ArraySchemaCreator extends React.Component {
     return (
       <Form>
 
-        <FormItem label="$ref">
-          <Checkbox checked={this.state.refStatus} onChange={
-            this.refStatusChange
-          }>
-            引用definition
-          </Checkbox>
-          { this.state.refStatus &&
-            <Select allowClear value={ this.state.arraySchema.$ref } onChange={ this.refChange }>
-              {
-                this.state.refList.map((ele, index, arr) => {
-                  return (
-                    <Option key={ ele.path + index } value={ index }>
-                      { ele.path }
-                    </Option>
-                  )
-                })
-              }
-            </Select>
-          }
-        </FormItem>
+        { !this.state.editPattern &&
+          <FormItem label="$ref">
+            <Checkbox checked={this.state.refStatus} onChange={
+              this.refStatusChange
+            }>
+              引用definition
+            </Checkbox>
+            { this.state.refStatus &&
+              <Select allowClear value={ this.state.arraySchema.$ref } onChange={ this.refChange }>
+                {
+                  this.state.refList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.path + index } value={ index }>
+                        { ele.path }
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
+          </FormItem>
+        }
 
         <FormItem label="key">
           <Input value={ this.state.arraySchema.key } onInput={ this.keyInput }></Input>
@@ -611,7 +694,7 @@ class ArraySchemaCreator extends React.Component {
 
         { !this.state.asDefinition &&
           <FormItem label="选择所属对象">
-            <Select allowClear value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
+            <Select allowClear disabled={ this.state.editPattern } value={ this.state.arraySchema.owner } onChange={ this.ownerChange }>
               {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (
@@ -645,19 +728,43 @@ class ArraySchemaCreator extends React.Component {
 
         { !this.state.refStatus &&
           <div>
-            <FormItem label="选择创建的definition的位置">
-              <Checkbox checked={this.state.asDefinition} onChange={
-                  this.defStatusChange
-                }>
-                  创建为definition，选择definition的创建位置
-              </Checkbox>
-              { this.state.asDefinition &&
-                <Select value={ this.state.arraySchema.defOwner } onChange={ this.defOwnerChange }>
-                  {
-                    this.state.defList.map((ele, index, arr) => {
+            { !this.state.editPattern &&
+              <FormItem label="选择创建的definition的位置">
+                <Checkbox checked={this.state.asDefinition} onChange={
+                    this.defStatusChange
+                  }>
+                    创建为definition，选择definition的创建位置
+                </Checkbox>
+                { this.state.asDefinition &&
+                  <Select value={ this.state.arraySchema.defOwner } onChange={ this.defOwnerChange }>
+                    {
+                      this.state.defList.map((ele, index, arr) => {
+                        return (
+                          <Option key={ ele.path + index } value={ index }>
+                            { ele.path }
+                          </Option>
+                        )
+                      })
+                    }
+                  </Select>
+                }
+              </FormItem>
+            }
+
+            <FormItem label="编辑模式">
+              <Checkbox checked={ this.state.editPattern } onChange={ this.editPatternChange }>编辑模式</Checkbox>
+              { this.state.editPattern &&
+                <Select allowClear value={ this.state.editTargetKey } onChange={ this.editTargetChange }>
+                  { this.state.arrayTypeList && this.state.arrayTypeList.length >0 &&
+                    this.state.arrayTypeList.map((ele, index, arr) => {
                       return (
-                        <Option key={ ele.path + index } value={ index }>
-                          { ele.path }
+                        <Option key={ ele.key } value={ index }>
+                          <div>
+                            { 'key: ' + ele.key }
+                          </div>
+                          <div>
+                            owner: { ele.owner ? ele.owner : 'JSONSchema' }
+                          </div>
                         </Option>
                       )
                     })
@@ -665,6 +772,7 @@ class ArraySchemaCreator extends React.Component {
                 </Select>
               }
             </FormItem>
+
             <FormItem label="title">
               <Input value={ this.state.arraySchema.title } onInput={ this.titleInput }></Input>
             </FormItem>
@@ -730,7 +838,12 @@ class ArraySchemaCreator extends React.Component {
                   (uiCreator) => {
                     this.uiCreator = uiCreator;
                   }
-                }></ArrayUICreator>
+                } uiFromProps={
+                  this.state.editPattern
+                  && this.state.arrayTypeList[this.state.editTargetIndex]
+                  && this.state.arrayTypeList[this.state.editTargetIndex].ui
+                  ? this.state.arrayTypeList[this.state.editTargetIndex].ui : {}
+                } />
               </div>
             </FormItem>
           </div>

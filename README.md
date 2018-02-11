@@ -145,6 +145,7 @@
 
 ### 以下特性不支持
 
+- 编辑模式下修改使用了$ref功能的成员
 - Advanced customization
   - Custom validation
   - Custom error messages
@@ -160,6 +161,15 @@
   - Custom descriptions
 
 ## Change Log
+
+### 2018-02-11
+
+- 完善编辑模式功能
+  - 获取到编辑对象时，将对象对应的ui属性添加到对象中
+  - 增加$ref状态下的判断，但是暂不支持修改使用了$ref功能的成员
+- 修复已知问题以及参数调整
+  - 编辑模式下，editTarget为null时的报错
+  - array类型的构造表单提交时如果defOwner为空时将不再传入defOwner参数
 
 ### 2018-02-09
 

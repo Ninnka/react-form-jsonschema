@@ -18,11 +18,26 @@ class ObjectUICreator extends React.Component {
 
   // * ------------
 
-  componentDidMount() {
+  componentWillReceiveProps (nextProps) {
+    if (nextProps.uiFromProps) {
+      this.coverUIFromProps(nextProps.uiFromProps);
+    }
+  }
 
+  componentDidMount () {
+    if (this.props.uiFromProps) {
+      this.coverUIFromProps(this.props.uiFromProps);
+    }
   }
 
   // * ------------
+
+  coverUIFromProps = (uiFromProps) => {
+    console.log('uiFromProps', uiFromProps);
+    this.setState({
+      ui: uiFromProps
+    });
+  }
 
   uiClassNamesChange = (event) => {
     let tmpValue = event.target.value;
