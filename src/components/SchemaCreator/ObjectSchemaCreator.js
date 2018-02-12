@@ -1066,7 +1066,7 @@ class ObjectSchemaCreator extends React.Component {
                   && this.state.objectTypeList[this.state.editTargetIndex]
                   && this.state.objectTypeList[this.state.editTargetIndex].ui
                   ? this.state.objectTypeList[this.state.editTargetIndex].ui : {}
-                } />
+                } editTargetIndex={ this.state.editTargetIndex } />
               </div>
             </FormItem>
           </div>

@@ -24,15 +24,12 @@ class ArrayUICreator extends React.Component {
   // * ------------
 
   componentWillReceiveProps (nextProps) {
-    if (nextProps.uiFromProps) {
+    if (nextProps.uiFromProps && this.props.editTargetIndex !== nextProps.editTargetIndex) {
       this.coverUIFromProps(nextProps.uiFromProps);
     }
   }
 
   componentDidMount() {
-    if (this.props.uiFromProps) {
-      this.coverUIFromProps(this.props.uiFromProps);
-    }
   }
 
   // * ------------

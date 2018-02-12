@@ -843,7 +843,7 @@ class ArraySchemaCreator extends React.Component {
                   && this.state.arrayTypeList[this.state.editTargetIndex]
                   && this.state.arrayTypeList[this.state.editTargetIndex].ui
                   ? this.state.arrayTypeList[this.state.editTargetIndex].ui : {}
-                } />
+                } editTargetIndex={ this.state.editTargetIndex } />
               </div>
             </FormItem>
           </div>
