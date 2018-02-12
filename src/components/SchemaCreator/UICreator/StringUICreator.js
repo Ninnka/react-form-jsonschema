@@ -36,9 +36,24 @@ class StringUICreator extends React.Component {
   componentDidMount() {
 
   }
+  //  生命周期子：在编辑模式下切换对象同时改变ui的值
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.modifyUi && nextProps.index !== this.props.index) {
+      this.changeUI(nextProps.modifyUi);
+    } else {
+      return ;
+    }
+  }
 
   // * ------------
+  // 覆盖ui的值
+  changeUI = (ui) => {
+    this.setState({
+      ui
+    })
+  }
 
+  // 改变ui属性值的通用方法
   uiChange = (param = {}) => {
     if (Object.keys(param).length === 0) {
       return;

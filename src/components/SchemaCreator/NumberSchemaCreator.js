@@ -103,6 +103,8 @@ class NumberSchemaCreator extends React.Component {
       asCreateDefinition: false,
       asDefault: false,
       asModify: false,
+      editTargetKey: '',
+      editTargetIndex: '',
       numberSchema: {
         key: '',
         title: '',
@@ -114,6 +116,7 @@ class NumberSchemaCreator extends React.Component {
       numberSchemaAddition: {
         default: '',
         enum: '',
+        enumNames: '',
         minimum: '',
         maximum: '',
         multipleOf: ''
@@ -581,18 +584,7 @@ class NumberSchemaCreator extends React.Component {
   // 选择要编辑的对象
   asModifyStatusChange = (event) => {
     let checked = event.target.checked;
-    this.setState({
-      editTargetKey: '',
-      editTargetIndex: '',
-      numberSchema: {
-        key: '',
-        title: '',
-        description: '',
-        owner: '',
-        $ref: '',
-        defOwner: 'definitions'
-      }
-    });
+    this.resetForm();
     if (!checked) {
       this.setState({
         asModify: checked
@@ -784,11 +776,22 @@ class NumberSchemaCreator extends React.Component {
               !this.state.asCreateDefinition &&
               <FormItem label="设置ui">
                 <div className="nested-form-item">
-                  <NumberUICreator ref={
-                    (uiCreator) => {
-                      this.uiCreator = uiCreator;
+                  <NumberUICreator 
+                    ref={
+                      (uiCreator) => {
+                        this.uiCreator = uiCreator;
+                      }
                     }
-                  }></NumberUICreator>
+                    modifyUi={
+                      this.state.asModify &&
+                      this.state.numberTypeList[this.state.editTargetIndex] &&
+                      this.state.numberTypeList[this.state.editTargetIndex].ui ?
+                      this.state.numberTypeList[this.state.editTargetIndex].ui : {}
+                    }
+                    index={
+                      this.state.editTargetIndex
+                    }
+                  ></NumberUICreator>
                 </div>
               </FormItem>
             }

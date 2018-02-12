@@ -708,11 +708,23 @@ class StringSchemaCreator extends React.Component {
               !this.state.asDefinition &&
               <FormItem label="设置ui">
                 <div className="nested-form-item">
-                  <StringUICreator ref={
-                    (uiCreator) => {
-                      this.uiCreator = uiCreator;
+                  <StringUICreator 
+                    ref={
+                      (uiCreator) => {
+                        this.uiCreator = uiCreator;
+                      }
+                    } 
+                    filterCreateArray={this.filterCreateArray}
+                    modifyUi={
+                      this.state.asModify &&
+                      this.state.stringTypeList[this.state.editTargetIndex] &&
+                      this.state.stringTypeList[this.state.editTargetIndex].ui ?
+                      this.state.stringTypeList[this.state.editTargetIndex].ui : {}
                     }
-                  } filterCreateArray={this.filterCreateArray}></StringUICreator>
+                    index={
+                      this.state.editTargetIndex
+                    }
+                    ></StringUICreator>
                 </div>
               </FormItem>
             }

@@ -505,9 +505,20 @@ class BooleanSchemaCreator extends React.Component {
               !this.state.asCreateDefinition &&
               <FormItem label="设置ui：">
                 <div className="nested-form-item">
-                  <UISchema ref={ (ui) => {
-                    this.UIschema = ui;
-                  }}/>
+                  <UISchema 
+                    ref={ (ui) => {
+                      this.UIschema = ui;
+                    }}
+                    modifyUi={
+                      this.state.asModify &&
+                      this.state.booleanTypeList[this.state.editTargetIndex] &&
+                      this.state.booleanTypeList[this.state.editTargetIndex].ui ?
+                      this.state.booleanTypeList[this.state.editTargetIndex].ui : {}
+                    }
+                    index={
+                      this.state.editTargetIndex                      
+                    }
+                  />
                 </div>
               </FormItem>
             }
