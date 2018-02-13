@@ -25,6 +25,22 @@ class BooleanUI extends React.Component {
     console.log(e);
   }
 
+  //  生命周期子：在编辑模式下切换对象同时改变ui的值
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.modifyUi && nextProps.index !== this.props.index) {
+      this.changeUI(nextProps.modifyUi);
+    } else {
+      return ;
+    }
+  }
+
+  // 覆盖ui的值
+  changeUI = (ui) => {
+    this.setState({
+      ui
+    })
+  }
+
   forItemChange = (value) => {
     this.setState((prevState, props) => {
       return {

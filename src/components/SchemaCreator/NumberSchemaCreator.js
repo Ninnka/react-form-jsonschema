@@ -25,6 +25,7 @@ class NumberSchemaCreator extends React.Component {
     ownerList: [],
     defList: [],
     refList: [],
+    numberTypeList: [],
     enumStatus: false,
     ownerTypeStatus: 'object',
     asFixedItems: false,
@@ -33,6 +34,9 @@ class NumberSchemaCreator extends React.Component {
     asCreateDefinition: false,
     asDefinition: false,
     asDefault: false,
+    asModify: false,
+    editTargetKey: '',
+    editTargetIndex: '',
     numberSchema: {
       key: '',
       title: '',
@@ -59,7 +63,8 @@ class NumberSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      numberTypeList: res.sameTypeListObj.tmpNumberList
     });
   }
 
@@ -69,7 +74,8 @@ class NumberSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      numberTypeList: res.sameTypeListObj.tmpNumberList
     });
   }
 
@@ -96,15 +102,21 @@ class NumberSchemaCreator extends React.Component {
       asDefinition: false,
       asCreateDefinition: false,
       asDefault: false,
+      asModify: false,
+      editTargetKey: '',
+      editTargetIndex: '',
       numberSchema: {
         key: '',
         title: '',
         description: '',
-        owner: ''
+        owner: '',
+        $ref: '',
+        defOwner: 'definitions'
       },
       numberSchemaAddition: {
         default: '',
         enum: '',
+        enumNames: '',
         minimum: '',
         maximum: '',
         multipleOf: ''
@@ -134,7 +146,7 @@ class NumberSchemaCreator extends React.Component {
     }
     let data = {};
     for (let item of Object.entries(obj)) {
-      if (item[1] !== '') {
+      if (item[1] !== ''|| item[0] === 'owner') {
         data[item[0]] = item[1];
       }
     }
@@ -144,6 +156,11 @@ class NumberSchemaCreator extends React.Component {
   submitForm = () => {
     let numberSchemaAddition = this.objectFilter(this.state.numberSchemaAddition);
     let numberSchema = this.objectFilter(this.state.numberSchema);
+    if (!this.state.asCreateDefinition) {
+      numberSchema.defOwner && delete numberSchema.defOwner;
+    } else {
+      numberSchema.owner !== undefined && delete numberSchema.owner;
+    }
     let data = {
       ...numberSchemaAddition,
       ...numberSchema,
@@ -507,7 +524,8 @@ class NumberSchemaCreator extends React.Component {
     this.setState((prevState, props) => {
       return {
         asDefinition: checked,
-        asCreateDefinition: false
+        asCreateDefinition: false,
+        asModify: false
       };
     });
   }
@@ -517,6 +535,7 @@ class NumberSchemaCreator extends React.Component {
    this.setState((prevState, props) => {
      return {
        asDefinition: false,
+       asModify: false,
        asCreateDefinition: checked
      };
    }); 
@@ -562,52 +581,120 @@ class NumberSchemaCreator extends React.Component {
     })
   }
 
+  // 选择要编辑的对象
+  asModifyStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.resetForm();
+    if (!checked) {
+      this.setState({
+        asModify: checked
+      })
+    } else {
+      this.setState({
+        asModify: checked,
+        asCreateDefinition: !checked,
+        asDefinition: !checked,
+      })
+    }
+  }
+
+  modifyTargetChange = (value) => {
+    console.log(value);
+    this.setState((prevState, props) => {
+      console.log(prevState.numberTypeList);
+      let editTarget = value !== undefined ? prevState.numberTypeList[value] : null;
+      let tmpObjectSchema = {
+        ...prevState.numberSchema
+      };
+
+      // * 获取目标对象的值
+      for (let item of Object.keys(tmpObjectSchema)) {
+        tmpObjectSchema[item] = editTarget !== null && editTarget[item] !== undefined ? editTarget[item] : '';
+      }
+
+      // * 如果选中的目标有$ref属性
+      if (editTarget && editTarget.$ref) {
+        // * 转换为$ref模式
+      }
+
+      return {
+        editTargetIndex: value !== undefined ? value : '',
+        editTargetKey: editTarget !== null ? editTarget.key : '',
+        numberSchema: tmpObjectSchema
+      }
+    })
+  }
+
   // * ------------
 
   render () {
     return (
       <Form>
-        <FormItem label="$ref">
-          <Checkbox checked={this.state.asDefinition} onChange={this.asDefinitionStatusChange}>设置ref</Checkbox>
-        </FormItem>
         {
-          this.state.asDefinition &&
-          <FormItem label="选择definition" className="nested-form-item">
-            <Select allowClear value={ this.state.numberSchema.$ref } onChange={ this.refChange }>
-              {
-                this.state.refList.map((ele, index, arr) => {
-                  return (
-                    <Option key={ ele.path + index } value={ index }>
-                      { ele.path }
-                    </Option>
-                  )
-                })
-              }
-            </Select>
+          !(this.state.asCreateDefinition || this.state.asModify) &&
+          <FormItem label="$ref">
+            <Checkbox checked={this.state.asDefinition} onChange={this.asDefinitionStatusChange}>设置ref</Checkbox>
+            {
+              this.state.asDefinition &&
+              <Select allowClear value={ this.state.numberSchema.$ref } onChange={ this.refChange }>
+                {
+                  this.state.refList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.path + index } value={ index }>
+                        { ele.path }
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
           </FormItem>
         }
         {
-          !this.state.asDefinition &&
-          <FormItem>
+          !(this.state.asDefinition || this.state.asModify) &&
+          <FormItem label="选择创建的definition的位置">
             <Checkbox checked={this.state.asCreateDefinition} onChange={this.asCreateDefinitionStatusChange}>创建为definition，选择definition的创建位置</Checkbox>
+            {
+              this.state.asCreateDefinition &&
+              <Select value={ this.state.numberSchema.defOwner } onChange={ this.defOwnerChange }>
+                {
+                  this.state.defList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.path + index } value={ index }>
+                        { ele.path }
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
           </FormItem>
         }
         {
-          this.state.asCreateDefinition && 
-          <FormItem label="选择所属definition" className="nested-form-item">
-            <Select value={ this.state.numberSchema.defOwner } onChange={ this.defOwnerChange }>
-              {
-                this.state.defList.map((ele, index, arr) => {
-                  return (
-                    <Option key={ ele.path + index } value={ index }>
-                      { ele.path }
-                    </Option>
-                  )
-                })
-              }
-            </Select>
+          !(this.state.asDefinition || this.state.asCreateDefinition) &&
+          <FormItem label="编辑模式">
+            <Checkbox checked={this.state.asModify} onChange={this.asModifyStatusChange}>编辑模式</Checkbox>
+            { this.state.asModify &&
+              <Select allowClear value={ this.state.editTargetKey } onChange={ this.modifyTargetChange }>
+                { this.state.numberTypeList && this.state.numberTypeList.length >0 &&
+                  this.state.numberTypeList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.key } value={ index }>
+                        <div>
+                          { 'key: ' + ele.key }
+                        </div>
+                        <div>
+                          owner: { ele.owner ? ele.owner : 'JSONSchema' }
+                        </div>
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
           </FormItem>
         }
+
         {
           !this.state.asCreateDefinition &&
           <FormItem label="选择所属对象">
@@ -689,11 +776,22 @@ class NumberSchemaCreator extends React.Component {
               !this.state.asCreateDefinition &&
               <FormItem label="设置ui">
                 <div className="nested-form-item">
-                  <NumberUICreator ref={
-                    (uiCreator) => {
-                      this.uiCreator = uiCreator;
+                  <NumberUICreator 
+                    ref={
+                      (uiCreator) => {
+                        this.uiCreator = uiCreator;
+                      }
                     }
-                  }></NumberUICreator>
+                    modifyUi={
+                      this.state.asModify &&
+                      this.state.numberTypeList[this.state.editTargetIndex] &&
+                      this.state.numberTypeList[this.state.editTargetIndex].ui ?
+                      this.state.numberTypeList[this.state.editTargetIndex].ui : {}
+                    }
+                    index={
+                      this.state.editTargetIndex
+                    }
+                  ></NumberUICreator>
                 </div>
               </FormItem>
             }

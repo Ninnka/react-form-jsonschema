@@ -3,7 +3,6 @@ import UISchema from '@components/SchemaCreator/UICreator/BooleanUICreator'
 
 // * 样式
 
-
 // * antd组件
 import {
   Form,
@@ -21,6 +20,7 @@ const confirm = Modal.confirm;
 class BooleanSchemaCreator extends React.Component {
 
   state = {
+    booleanTypeList: [],
     ownerList: [],
     defList: [],
     refList: [],
@@ -29,6 +29,9 @@ class BooleanSchemaCreator extends React.Component {
     coverFixedItems: false,
     asDefinition: false,
     asCreateDefinition: false,
+    asModify: false,
+    editTargetKey: '',
+    editTargetIndex: '',
     booleanSchema: {
       key: '',
       title: '',
@@ -49,8 +52,10 @@ class BooleanSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      booleanTypeList: res.sameTypeListObj.tmpBooleanList
     });
+    console.log(res.sameTypeListObj);
   }
 
   componentDidMount () {
@@ -60,8 +65,10 @@ class BooleanSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      booleanTypeList: res.sameTypeListObj.tmpBooleanList
     });
+    console.log(res.sameTypeListObj);
   }
 
   resetForm = () => {
@@ -71,6 +78,7 @@ class BooleanSchemaCreator extends React.Component {
       coverFixedItems: false,
       asDefinition: false,
       asCreateDefinition: false,
+      asModify: false,
       booleanSchema: {
         key: '',
         title: '',
@@ -89,8 +97,14 @@ class BooleanSchemaCreator extends React.Component {
 
   confirmForm = () => {
     console.log('confirmForm');
+    let booleanSchema = this.objectFilter(this.state.booleanSchema);
+    if (!this.state.asCreateDefinition) {
+      booleanSchema.defOwner && delete booleanSchema.defOwner;
+    } else {
+      booleanSchema.owner !== undefined && delete booleanSchema.owner;
+    }
     let data = {
-      ...this.state.booleanSchema,
+      ...booleanSchema,
       asDefinition: this.state.asDefinition,
       type: 'boolean'
     };
@@ -245,10 +259,10 @@ class BooleanSchemaCreator extends React.Component {
     } else {
       this.setState({
         asDefinition: checked,
-        asCreateDefinition: !checked
+        asCreateDefinition: !checked,
+        asModify: !checked,
       })
     }
-    
   }
 
   asCreateDefinitionStatusChange = (e) => {
@@ -260,6 +274,7 @@ class BooleanSchemaCreator extends React.Component {
     } else {
       this.setState({
         asCreateDefinition: checked,
+        asModify: !checked,
         asDefinition: !checked
       })      
     }
@@ -290,17 +305,73 @@ class BooleanSchemaCreator extends React.Component {
     });
   }
 
+  asModifyStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState({
+      editTargetKey: '',
+      editTargetIndex: '',
+      booleanSchema: {
+        key: '',
+        title: '',
+        description: '',
+        default: '',
+        owner: '',
+        '$ref': '',
+        defOwner: 'definitions'
+      }
+    });
+    if (!checked) {
+      this.setState({
+        asModify: checked
+      })
+    } else {
+      this.setState({
+        asModify: checked,
+        asCreateDefinition: !checked,
+        asDefinition: !checked
+      })
+    }
+  }
+
   objectFilter = (obj = {}) => {
     if (!obj) {
       return;
     }
     let data = {};
     for (let item of Object.entries(obj)) {
-      if (item[1] !== '') {
+      if (item[1] !== '' || item[0] === 'owner') {
         data[item[0]] = item[1];
       }
     }
     return data;
+  }
+
+  // * 编辑对象变化
+  modifyTargetChange = (value) => {
+    console.log(value);
+    this.setState((prevState, props) => {
+      console.log(prevState.booleanTypeList);
+      let editTarget = value !== undefined ? prevState.booleanTypeList[value] : null;
+      let tmpObjectSchema = {
+        ...prevState.booleanSchema
+      };
+
+      // * 获取目标对象的值
+      for (let item of Object.keys(tmpObjectSchema)) {
+        tmpObjectSchema[item] = editTarget !== null && editTarget[item] !== undefined ? editTarget[item] : '';
+      }
+
+      // * 如果选中的目标有$ref属性
+      if (editTarget && editTarget.$ref) {
+        // * 转换为$ref模式
+      }
+
+      return {
+        editTargetIndex: value !== undefined ? value : '',
+        editTargetKey: editTarget !== null ? editTarget.key : '',
+        booleanSchema: tmpObjectSchema
+      }
+    })
   }
 
   // * ------------
@@ -308,9 +379,12 @@ class BooleanSchemaCreator extends React.Component {
   render () {
     return (
       <Form>
-        <FormItem label="$ref">
-          <Checkbox checked={this.state.asDefinition} onChange={this.asDefinitionStatusChange}>设置ref</Checkbox>
-        </FormItem>
+        {
+          !(this.state.asModify || this.state.asCreateDefinition) &&
+          <FormItem label="$ref">
+            <Checkbox checked={this.state.asDefinition} onChange={this.asDefinitionStatusChange}>设置ref</Checkbox> 
+          </FormItem>
+        }
         {
           this.state.asDefinition &&
           <FormItem label="选择definition" className="nested-form-item">
@@ -328,14 +402,14 @@ class BooleanSchemaCreator extends React.Component {
           </FormItem>
         }
         {
-          !this.state.asDefinition &&
-          <FormItem>
+          !(this.state.asDefinition || this.state.asModify) &&
+          <FormItem label="创建Definition">
             <Checkbox checked={this.state.asCreateDefinition} onChange={this.asCreateDefinitionStatusChange}>创建Definition</Checkbox>
           </FormItem>
         }
         {
           this.state.asCreateDefinition && 
-          <FormItem label="选择所属definition" className="nested-form-item">
+          <FormItem label="选择创建的definition的位置" className="nested-form-item">
             <Select value={ this.state.booleanSchema.defOwner } onChange={ this.defOwnerChange }>
               {
                 this.state.defList.map((ele, index, arr) => {
@@ -350,9 +424,33 @@ class BooleanSchemaCreator extends React.Component {
           </FormItem>
         }
         {
+          !(this.state.asDefinition || this.state.asCreateDefinition) &&
+          <FormItem label="编辑模式">
+            <Checkbox checked={this.state.asModify} onChange={this.asModifyStatusChange}>编辑模式</Checkbox>
+            { this.state.asModify &&
+              <Select allowClear value={ this.state.editTargetKey } onChange={ this.modifyTargetChange }>
+                { this.state.booleanTypeList && this.state.booleanTypeList.length >0 &&
+                  this.state.booleanTypeList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.key } value={ index }>
+                        <div>
+                          { 'key: ' + ele.key }
+                        </div>
+                        <div>
+                          owner: { ele.owner ? ele.owner : 'JSONSchema' }
+                        </div>
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
+          </FormItem>
+        }
+        {
           !this.state.asCreateDefinition &&
           <FormItem label="选择所属对象">
-            <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange }>
+            <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange } disabled={this.state.asModify}>
               {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (
@@ -398,7 +496,7 @@ class BooleanSchemaCreator extends React.Component {
             </FormItem>
 
             <FormItem label="default">
-              <Select value={ this.state.booleanSchema.default.toString() } onChange={ this.defaultInput }>
+              <Select value={ this.state.booleanSchema.default ? this.state.booleanSchema.default.toString() : '' } onChange={ this.defaultInput }>
                 <Option value="true">true</Option>
                 <Option value="false">false</Option>
               </Select>
@@ -407,9 +505,20 @@ class BooleanSchemaCreator extends React.Component {
               !this.state.asCreateDefinition &&
               <FormItem label="设置ui：">
                 <div className="nested-form-item">
-                  <UISchema ref={ (ui) => {
-                    this.UIschema = ui;
-                  }}/>
+                  <UISchema 
+                    ref={ (ui) => {
+                      this.UIschema = ui;
+                    }}
+                    modifyUi={
+                      this.state.asModify &&
+                      this.state.booleanTypeList[this.state.editTargetIndex] &&
+                      this.state.booleanTypeList[this.state.editTargetIndex].ui ?
+                      this.state.booleanTypeList[this.state.editTargetIndex].ui : {}
+                    }
+                    index={
+                      this.state.editTargetIndex                      
+                    }
+                  />
                 </div>
               </FormItem>
             }

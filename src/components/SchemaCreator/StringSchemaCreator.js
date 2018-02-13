@@ -30,9 +30,13 @@ class StringSchemaCreator extends React.Component {
     asDefinition: false,
     asDefault: false,
     enumStatus: false,
+    asModify: false,
+    stringTypeList: [],
     ownerList: [],
     defList: [],
     refList: [],
+    editTargetKey: '',
+    editTargetIndex: '',
     stringSchema: {
       key: '',
       title: '',
@@ -64,7 +68,8 @@ class StringSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      stringTypeList: res.sameTypeListObj.tmpStringList
     });
   }
 
@@ -73,7 +78,8 @@ class StringSchemaCreator extends React.Component {
     this.setState({
       ownerList: res.ownerList,
       defList: res.defList,
-      refList: res.refList
+      refList: res.refList,
+      stringTypeList: res.sameTypeListObj.tmpStringList
     });
   }
 
@@ -100,6 +106,7 @@ class StringSchemaCreator extends React.Component {
       asDefinition: false,
       asDefault: false,
       enumStatus: false,
+      asModify: false,
       stringSchema: {
         key: '',
         title: '',
@@ -135,6 +142,11 @@ class StringSchemaCreator extends React.Component {
 
   submitForm = () => {
     let stringSchema = this.objectFilter(this.state.stringSchema);
+    if (!this.state.asDefinition) {
+      stringSchema.defOwner && delete stringSchema.defOwner
+    } else {
+      stringSchema.owner !== undefined && delete stringSchema.owner
+    }
     let data = {
       ...stringSchema,
       type: 'string'
@@ -397,10 +409,17 @@ class StringSchemaCreator extends React.Component {
 
   refStatusChange = (event) => {
     let checked = event.target.checked;
+    if (!checked) {
+      this.setState({
+        refStatus: checked
+      })
+      return ;
+    }
     this.setState((prevState, props) => {
       return {
         refStatus: checked,
-        asDefinition: false
+        asDefinition: !checked,
+        asModify: !checked
       };
     });
   }
@@ -419,10 +438,17 @@ class StringSchemaCreator extends React.Component {
 
   defStatusChange = (event) => {
     let checked = event.target.checked;
+    if (!checked) {
+      this.setState({
+        asDefinition: checked
+      })
+      return ;
+    }
     this.setState((prevState, props) => {
       return {
         asDefinition: checked,
-        refStatus: false
+        refStatus: !checked,
+        asModify: !checked
       };
     });
   }
@@ -462,11 +488,69 @@ class StringSchemaCreator extends React.Component {
     }
     let data = {};
     for (let item of Object.entries(obj)) {
-      if (item[1] !== '') {
+      if (item[1] !== '' || item[0] === 'owner') {
         data[item[0]] = item[1];
       }
     }
     return data;
+  }
+
+  // 选中
+  asModifyStatusChange = (event) => {
+    let checked = event.target.checked;
+    this.setState({
+      editTargetKey: '',
+      editTargetIndex: '',
+      stringSchema: {
+        key: '',
+        title: '',
+        description: '',
+        owner: '',
+        defOwner: 'definitions',
+        $ref: ''
+      }
+    });
+    if (!checked) {
+      this.setState({
+        asModify : checked,
+      })
+    } else {
+      this.setState((prevState, props) => {
+        return {
+          asModify : checked,
+          refStatus: !checked,
+          asDefinition: !checked
+        };
+      });
+    }
+  }
+
+  // * 编辑对象变化
+  modifyTargetChange = (value) => {
+    console.log(value);
+    this.setState((prevState, props) => {
+      console.log(prevState.stringTypeList);
+      let editTarget = value !== undefined ? prevState.stringTypeList[value] : null;
+      let tmpObjectSchema = {
+        ...prevState.stringSchema
+      };
+
+      // * 获取目标对象的值
+      for (let item of Object.keys(tmpObjectSchema)) {
+        tmpObjectSchema[item] = editTarget !== null && editTarget[item] !== undefined ? editTarget[item] : '';
+      }
+
+      // * 如果选中的目标有$ref属性
+      if (editTarget && editTarget.$ref) {
+        // * 转换为$ref模式
+      }
+
+      return {
+        editTargetIndex: value !== undefined ? value : '',
+        editTargetKey: editTarget !== null ? editTarget.key : '',
+        stringSchema: tmpObjectSchema
+      }
+    })
   }
 
   // * ------------
@@ -474,29 +558,32 @@ class StringSchemaCreator extends React.Component {
   render () {
     return (
       <Form>
+        
+        {
+          !this.state.asModify &&
+          <FormItem label="$ref">
+            <Checkbox checked={this.state.refStatus} onChange={
+              this.refStatusChange
+            }>
+              引用definition
+            </Checkbox>
+            { this.state.refStatus &&
+              <Select allowClear value={ this.state.stringSchema.$ref } onChange={ this.refChange }>
+                {
+                  this.state.refList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.path + index } value={ index }>
+                        { ele.path }
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
+          </FormItem>
+        }
 
-        <FormItem label="$ref">
-          <Checkbox checked={this.state.refStatus} onChange={
-            this.refStatusChange
-          }>
-            引用definition
-          </Checkbox>
-          { this.state.refStatus &&
-            <Select allowClear value={ this.state.stringSchema.$ref } onChange={ this.refChange }>
-              {
-                this.state.refList.map((ele, index, arr) => {
-                  return (
-                    <Option key={ ele.path + index } value={ index }>
-                      { ele.path }
-                    </Option>
-                  )
-                })
-              }
-            </Select>
-          }
-        </FormItem>
-
-        { !this.state.refStatus &&
+        { !(this.state.refStatus || this.state.asModify) &&
             <FormItem label="选择创建的definition的位置">
               <Checkbox checked={this.state.asDefinition} onChange={
                   this.defStatusChange
@@ -517,6 +604,30 @@ class StringSchemaCreator extends React.Component {
                 </Select>
               }
             </FormItem>
+        }
+        {
+          !(this.state.refStatus || this.state.asDefinition) &&
+          <FormItem label="编辑模式">
+            <Checkbox checked={this.state.asModify} onChange={this.asModifyStatusChange}>编辑模式</Checkbox>
+            { this.state.asModify &&
+              <Select allowClear value={ this.state.editTargetKey } onChange={ this.modifyTargetChange }>
+                { this.state.stringTypeList && this.state.stringTypeList.length >0 &&
+                  this.state.stringTypeList.map((ele, index, arr) => {
+                    return (
+                      <Option key={ ele.key } value={ index }>
+                        <div>
+                          { 'key: ' + ele.key }
+                        </div>
+                        <div>
+                          owner: { ele.owner ? ele.owner : 'JSONSchema' }
+                        </div>
+                      </Option>
+                    )
+                  })
+                }
+              </Select>
+            }
+          </FormItem>
         }
         {
           !this.state.asDefinition &&
@@ -597,11 +708,23 @@ class StringSchemaCreator extends React.Component {
               !this.state.asDefinition &&
               <FormItem label="设置ui">
                 <div className="nested-form-item">
-                  <StringUICreator ref={
-                    (uiCreator) => {
-                      this.uiCreator = uiCreator;
+                  <StringUICreator 
+                    ref={
+                      (uiCreator) => {
+                        this.uiCreator = uiCreator;
+                      }
+                    } 
+                    filterCreateArray={this.filterCreateArray}
+                    modifyUi={
+                      this.state.asModify &&
+                      this.state.stringTypeList[this.state.editTargetIndex] &&
+                      this.state.stringTypeList[this.state.editTargetIndex].ui ?
+                      this.state.stringTypeList[this.state.editTargetIndex].ui : {}
                     }
-                  } filterCreateArray={this.filterCreateArray}></StringUICreator>
+                    index={
+                      this.state.editTargetIndex
+                    }
+                    ></StringUICreator>
                 </div>
               </FormItem>
             }

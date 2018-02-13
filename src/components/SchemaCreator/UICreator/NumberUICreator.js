@@ -24,7 +24,7 @@ class NumberUICreator extends React.Component {
       'updown',
       'range',
       'radio'
-    ]
+    ] 
   }
 
   optionstypeList = ['label', 'inputType'];
@@ -32,11 +32,28 @@ class NumberUICreator extends React.Component {
   // * ------------
 
   componentDidMount() {
+    // if (this.props.modifyUi) {
+    //   this.changeUI(this.props.modifyUi);
+    // }
+  }
 
+  //  生命周期子：在编辑模式下切换对象同时改变ui的值
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.modifyUi && nextProps.index !== this.props.index) {
+      this.changeUI(nextProps.modifyUi);
+    } else {
+      return ;
+    }
   }
 
   // * ------------
-
+  // 覆盖ui的值
+  changeUI = (ui) => {
+    this.setState({
+      ui: ui
+    })
+  }
+  // 修改ui属性通用方法
   uiChange = (param = {}) => {
     if (Object.keys(param).length === 0) {
       return;
