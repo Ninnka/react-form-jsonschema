@@ -43,16 +43,16 @@ class BooleanSchemaCreator extends React.Component {
     }
   }
 
-  UIschema = {}
+  UIschema = {} // UISchema的ref对象
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
     // this.compuListPrepare(nextProps);
     let res = nextProps.compuListPrepare(nextProps);
     this.setState({
-      ownerList: res.ownerList,
-      defList: res.defList,
-      refList: res.refList,
+      ownerList: nextProps.ownerList ? nextProps.ownerList : [],
+      defList: nextProps.defList ? nextProps.defList : [],
+      refList: nextProps.refList ? nextProps.refList : [],
       booleanTypeList: res.sameTypeListObj.tmpBooleanList
     });
     console.log(res.sameTypeListObj);
@@ -63,9 +63,9 @@ class BooleanSchemaCreator extends React.Component {
     // this.compuListPrepare(this.props);
     let res = this.props.compuListPrepare(this.props);
     this.setState({
-      ownerList: res.ownerList,
-      defList: res.defList,
-      refList: res.refList,
+      ownerList: this.props.ownerList ? this.props.ownerList : [],
+      defList: this.props.defList ? this.props.defList : [],
+      refList: this.props.refList ? this.props.refList : [],
       booleanTypeList: res.sameTypeListObj.tmpBooleanList
     });
     console.log(res.sameTypeListObj);

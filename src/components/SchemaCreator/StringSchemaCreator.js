@@ -66,9 +66,9 @@ class StringSchemaCreator extends React.Component {
   componentWillReceiveProps (nextProps) {
     let res = nextProps.compuListPrepare(nextProps);
     this.setState({
-      ownerList: res.ownerList,
-      defList: res.defList,
-      refList: res.refList,
+      oownerList: nextProps.ownerList ? nextProps.ownerList : [],
+      defList: nextProps.defList ? nextProps.defList : [],
+      refList: nextProps.refList ? nextProps.refList : [],
       stringTypeList: res.sameTypeListObj.tmpStringList
     });
   }
@@ -76,9 +76,9 @@ class StringSchemaCreator extends React.Component {
   componentDidMount () {
     let res = this.props.compuListPrepare(this.props);
     this.setState({
-      ownerList: res.ownerList,
-      defList: res.defList,
-      refList: res.refList,
+      ownerList: this.props.ownerList ? this.props.ownerList : [],
+      defList: this.props.defList ? this.props.defList : [],
+      refList: this.props.refList ? this.props.refList : [],
       stringTypeList: res.sameTypeListObj.tmpStringList
     });
   }

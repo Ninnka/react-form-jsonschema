@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import Qs from 'Qs';
+import Qs from 'qs';
 
 // * 创建axios实例
 let axiosInstance = axios.create({
