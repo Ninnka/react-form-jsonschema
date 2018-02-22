@@ -60,9 +60,9 @@ class ObjectSchemaCreator extends React.Component {
     console.log('o nextProps', nextProps);
     let res = nextProps.compuListPrepare(nextProps);
     this.setState({
-      ownerList: res.ownerList,
-      defList: res.defList,
-      refList: res.refList,
+      ownerList: nextProps.ownerList ? nextProps.ownerList : [],
+      defList: nextProps.defList ? nextProps.defList : [],
+      refList: nextProps.refList ? nextProps.refList : [],
       objectTypeList: res.sameTypeListObj.tmpObjectList
     });
   }
@@ -71,9 +71,9 @@ class ObjectSchemaCreator extends React.Component {
     console.log('o properties: ', this.props.properties);
     let res = this.props.compuListPrepare(this.props);
     this.setState({
-      ownerList: res.ownerList,
-      defList: res.defList,
-      refList: res.refList,
+      ownerList: this.props.ownerList ? this.props.ownerList : [],
+      defList: this.props.defList ? this.props.defList : [],
+      refList: this.props.refList ? this.props.refList : [],
       objectTypeList: res.sameTypeListObj.tmpObjectList
     });
   }

@@ -162,6 +162,12 @@
 
 ## Change Log
 
+### 2018-02-22
+
+- 调整jsonSchema和withCompuListHighOrder等文件的代码结构，将owner、definition、$ref列表的计算同一处理
+- 引入axios库，加入自定义的axios配置
+- webpack配置-增加新的别名
+
 ### 2018-02-12
 
 - 完善原始类型表单构造器中的编辑模式功能

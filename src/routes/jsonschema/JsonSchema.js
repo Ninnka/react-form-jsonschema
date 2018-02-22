@@ -38,7 +38,10 @@ class JsonSchema extends React.Component {
   state = {
     JSONSchema: {},
     UISchema: {},
-    FormData: {}
+    FormData: {},
+    ownerList: [],
+    defList: [],
+    refList: []
   }
 
   componentDidMount () {
@@ -46,8 +49,9 @@ class JsonSchema extends React.Component {
   }
 
   componentDidCatch () {
-    this.messageError({
-      message: '出现未知错误'
+    utilFunc.messageError({
+      message: '出现未知错误',
+      duration: 0
     });
   }
 
@@ -91,12 +95,6 @@ class JsonSchema extends React.Component {
       tmpProperties = useProperties; // * 用来定位JsonSchema具体的位置
     }
 
-    // let useUISchema = cloneDeep(this.state.UISchema);
-    // let tmpUISchema = useUISchema; // * 用来定位UISchema具体的位置
-
-    // let useFormData = cloneDeep(this.state.FormData);
-    // let tmpFormData = useFormData; // * 用来定位FormData具体的位置
-
     for (let item of ownerList) {
       if (
         item !== 'root'
@@ -118,85 +116,7 @@ class JsonSchema extends React.Component {
       ) {
         tmpProperties = tmpProperties[item];
       }
-
-      // // * ui相关start---------------
-      // // * 创建ui对象路径
-      // item !== 'root' && !useUISchema[item] && (useUISchema[item] = {});
-      // item !== 'root' && (useUISchema = useUISchema[item]);
-      // // * ui相关end---------------
-
-      // * formData相关start------------
-      // // * 创建tmpProperties对应的formData
-      // let jsType = utilFunc.getPropertyJsType(useFormData);
-      // if (item !== 'root' && !useFormData[item]) {
-      //   let tmpD = tmpProperties.type === 'array' ? [] : {};
-      //   // * 如果useFormData是数组，则添加一个对象进去
-      //   if (jsType.indexOf('Array') !== -1) {
-      //     useFormData.push(tmpD);
-      //     let pos = useFormData.length - 1;
-      //     useFormData = useFormData[pos];
-      //   }
-
-      //   // * 如果useFormData是对象，则按照通常方法创造子对象
-      //   jsType.indexOf('Object') !== -1 && !useFormData[item] && (useFormData[item] = tmpD);
-      // }
-      // item !== 'root' && (useFormData = useFormData[item]);
-      // * formData相关end------------
     }
-
-
-    // * ui相关start---------------
-    // // * 设置ui最终位置的js类型与key名
-    // if (tmpProperties.type === 'object'
-    // || (ownerList.length === 1 && ownerList[0] === '')
-    // || (ownerList.length === 1 && ownerList[0] === 'root' && this.state.JSONSchema.type === 'object')) {
-    //   useUISchema[newProperty.key] = {
-    //     ...useUISchema[newProperty.key]
-    //   };
-    //   useUISchema = useUISchema[newProperty.key];
-
-    // } else if (tmpProperties.type === 'array' && newProperty.asFixedItems) {
-    //   if (useUISchema['items'] && Object.keys(useUISchema['items']).length > 0) {
-    //     useUISchema['additionalItems'] = useUISchema['items'];
-    //   }
-
-    //   if (utilFunc.getPropertyJsType(useUISchema['items']).indexOf('Array') === -1) {
-    //     useUISchema['items'] = [];
-    //   }
-    //   useUISchema = useUISchema['items'];
-    // } else if (tmpProperties.type === 'array' && newProperty.coverFixedItems) {
-    //   delete useUISchema['additionalItems'];
-
-    //   useUISchema['items'] = {};
-    //   useUISchema = useUISchema['items'];
-    // } else {
-    //   let hasArray = utilFunc.getPropertyJsType(tmpProperties.items).indexOf('Array');
-    //   let name = hasArray !== -1 ? 'additionalItems' : 'items';
-    //   useUISchema[name] = {};
-    //   useUISchema = useUISchema[name];
-    // }
-
-    // // * 将ui加入到目标位置
-    // newProperty.ui = newProperty.ui ? newProperty.ui : {};
-    // if (utilFunc.getPropertyJsType(useUISchema).indexOf('Array') !== -1) {
-    //   console.log('useUISchema before', useUISchema);
-    //   let data = {};
-    //   for (let item of Object.entries(newProperty.ui)) {
-    //     let uiPrefix = item[0] !== 'classNames' ? 'ui:' : '';
-    //     data[uiPrefix + item[0]] = item[1];
-    //   }
-    //   // useUISchema[tmpProperties.items.length] = data;
-    //   useUISchema.push({...data});
-    // } else if (utilFunc.getPropertyJsType(useUISchema).indexOf('Object') !== -1) {
-    //   for (let item of Object.entries(newProperty.ui)) {
-    //     let uiPrefix = item[0] !== 'classNames' ? 'ui:' : '';
-    //     useUISchema[uiPrefix + item[0]] = item[1];
-    //   }
-    // }
-
-    // delete newProperty.ui;
-    // * ui相关end---------------
-
 
     // * 如果是使用$ref的情况，获取$ref的正式路径
     if (newProperty.$ref) {
@@ -240,47 +160,6 @@ class JsonSchema extends React.Component {
     if (options.prune === 'key' && newProperty.oldKey) {
       delete tmpProperties[newProperty.oldKey];
     }
-
-    // * formData相关start------------
-    // // * 如果没有设置default，则再formdata中设置对应的key
-    // if (newProperty.type === 'object') {
-    //   useFormData[newProperty.key] = {};
-    // } else if (newProperty.type === 'array') {
-    //   useFormData[newProperty.key] = [];
-    //   // * 如果数组设置了default
-    //   if (newProperty.default) {
-    //     useFormData[newProperty.key] = [...newProperty.default];
-    //   }
-    //   // * 如果数组设置了minItems
-    //   if (newProperty.minItems) {
-    //     let len = useFormData[newProperty.key].length;
-    //     newProperty.minItems > len && (useFormData[newProperty.key] = useFormData[newProperty.key].concat([...Array(2).fill('')]));
-    //   }
-    // } else {
-    //   if (newProperty.default === undefined && utilFunc.getPropertyJsType(useFormData).indexOf('Object') !== -1) {
-    //     useFormData[newProperty.key] = '';
-    //   } else if (utilFunc.getPropertyJsType(useFormData).indexOf('Array') !== -1 && newProperty.asFixedItems) {
-    //     let initValue = null;
-    //     switch (newProperty.type) {
-    //       case 'boolean':
-    //         initValue = newProperty.default === undefined ? false : newProperty.default;
-    //         break;
-    //       case 'number':
-    //         initValue = newProperty.default === undefined ? 0 : newProperty.default;
-    //         break;
-    //       case 'string':
-    //         initValue = newProperty.default === undefined ? '' : newProperty.default;
-    //         break;
-    //       default:
-    //         initValue = '';
-    //         break;
-    //     }
-    //     // let len = tmpProperties.items.length;
-    //     // useFormData.splice(len, 1, initValue);
-    //     useFormData.push(initValue);
-    //   }
-    // }
-    // * formData相关end------------
 
     let tmpUISchema = this.addNewPropertiesUiSchema({
       ownerList,
@@ -328,6 +207,7 @@ class JsonSchema extends React.Component {
       utilFunc.messageSuccess({
         message: '添加成功'
       });
+      this.compuListPrepare();
     });
   }
 
@@ -341,7 +221,6 @@ class JsonSchema extends React.Component {
       item !== 'root' && !useUISchema[item] && (useUISchema[item] = {});
       item !== 'root' && (useUISchema = useUISchema[item]);
     }
-
 
     // * 数据预览中使用搜索功能删除时触发
     if (prune === 'delete') {
@@ -519,6 +398,7 @@ class JsonSchema extends React.Component {
       utilFunc.messageSuccess({
         message: '添加成功'
       });
+      this.compuListPrepare();
     });
     return;
   }
@@ -593,7 +473,181 @@ class JsonSchema extends React.Component {
       utilFunc.messageSuccess({
         message: '添加definitions成功'
       });
+      this.compuListPrepare();
     });
+  }
+
+  // * ------------
+
+  compuListPrepare = () => {
+    let tmpOwnerList = [];
+    console.log('111');
+    if (this.state.JSONSchema.properties) {
+      tmpOwnerList = [{path: 'root', type: 'object'}].concat(this.compuOwnerList('root', this.state.JSONSchema.properties));
+      console.log('tmpOwnerList', tmpOwnerList);
+    } else if (this.state.JSONSchema && this.state.JSONSchema.type === 'array') {
+      tmpOwnerList = this.compuOwnerListArray('', ['root', this.state.JSONSchema]);
+    }
+    let tmpDefList = [];
+    if (this.state.JSONSchema.definitions) {
+      tmpDefList = this.compuDefList('', this.state.JSONSchema.definitions);
+    }
+    let tmpRefList = [];
+    for (let index = 0; index < tmpDefList.length; index++) {
+      let tmpList = tmpDefList[index].path.split('~/~');
+      if (tmpList.length > 0 && tmpList[tmpList.length - 1] !== 'definitions') {
+        tmpRefList.push(tmpDefList[index]);
+      }
+    }
+    this.setState({
+      ownerList: tmpOwnerList,
+      defList: tmpDefList,
+      refList: tmpRefList
+    });
+    // return {
+    //   ownerList: tmpOwnerList,
+    //   defList: tmpDefList,
+    //   refList: tmpRefList
+    // }
+  }
+
+  compuOwnerList = (path, properties) => {
+    let tmpOwnerList = [];
+    let propertiesEntryList = Object.entries(properties);
+    for (let item of propertiesEntryList) {
+      if (item[1].type === 'object') {
+        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
+      } else if (item[1].type === 'array') {
+        tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
+      }
+    }
+    return tmpOwnerList;
+  }
+
+  compuOwnerListObject = (path, item, exclude = false) => {
+    let tmpOwnerList = [];
+    !exclude && tmpOwnerList.push({
+      path: (path + '~/~' + item[0]).replace(/(^~\/~)|(~\/~$)/g, ''),
+      type: 'object'
+    });
+    tmpOwnerList = tmpOwnerList.concat(this.compuOwnerList(path + '~/~' + item[0], item[1].properties));
+    return tmpOwnerList;
+  }
+
+  compuOwnerListArray = (path, item, exclude = false) => {
+    let tmpOwnerList = [];
+    let tmpPath = path + '~/~' + item[0];
+    !exclude && tmpOwnerList.push({
+      path: tmpPath.replace(/(^~\/~)|(~\/~$)/g, ''),
+      type: 'array'
+    });
+    if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Array') !== -1) {
+      let len = item[1].items.length;
+      for (let i = 0; i < len; i++) {
+        let tarr = this.compuOwnerListHelper(tmpPath, ['items~/~' + i, item[1].items[i]]);
+        tmpOwnerList = tmpOwnerList.concat(tarr);
+      }
+      if (item[1].additionalItems && item[1].additionalItems.type !== undefined) {
+        let tarr = this.compuOwnerListHelper(tmpPath, ['additionalItems', item[1].additionalItems]);
+        tmpOwnerList = tmpOwnerList.concat(tarr);
+      }
+    } else if (item[1].items && Object.prototype.toString.call(item[1].items).indexOf('Object') !== -1) {
+      let tarr = this.compuOwnerListHelper(tmpPath, ['items', item[1].items]);
+      tmpOwnerList = tmpOwnerList.concat(tarr);
+    }
+    return tmpOwnerList;
+  }
+
+  compuOwnerListHelper = (path, item) => {
+    let tmpOwnerList = [];
+    if (item[1].type === 'object') {
+      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListObject(path, item));
+    } else if (item[1].type === 'array') {
+      tmpOwnerList = tmpOwnerList.concat(this.compuOwnerListArray(path, item));
+    }
+    return tmpOwnerList;
+  }
+
+  // * ------------
+
+  compuDefList = (path, item) => {
+    // console.log('compuDefList');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    tmpDefList.push({
+      path: prePath,
+      type: 'object'
+    });
+
+    let defEntriesList = Object.entries(item);
+    // console.log('defEntriesList', defEntriesList);
+
+    for (let item of defEntriesList) {
+      let tmpPath = prePath + '~/~' + item[0];
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      tmpDefList = this.compuDefListPure(tmpPath, item[1], tmpDefList);
+    }
+    return tmpDefList;
+  }
+
+  compuDefListObj = (path, param) => {
+    console.log('compuDefListObj');
+    let tmpDefList = [];
+
+    let prePath = path ? path + '~/~definitions' : 'definitions';
+    let tmpPath = prePath + '~/~' + param.key;
+    console.log('tmpPath', tmpPath);
+    tmpDefList.push({
+      path: tmpPath,
+      type: 'object'
+    });
+    tmpDefList = this.compuDefListPure(tmpPath, param.item, tmpDefList);
+    return tmpDefList;
+  }
+
+  compuDefListArray = (path, item) => {
+    console.log('compuDefListArray');
+    let tmpDefList = [];
+
+    let prePath = path + '~/~items';
+    let len = item.length;
+    for (let i = 0; i < len; i++) {
+      let tmpPath = prePath + '~/~' + i;
+      tmpDefList.push({
+        path: tmpPath,
+        type: 'object'
+      });
+      console.log('item[i]', item[i]);
+      tmpDefList = this.compuDefListPure(tmpPath, item[i], tmpDefList);
+    }
+    return tmpDefList;
+  }
+
+  compuDefListPure = (path, item, list) => {
+    let tmpDefList = list;
+    let tmpPath = path;
+    let tmpItem = item;
+
+    if (tmpItem.definitions) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.definitions));
+    }
+    if (tmpItem.properties && Object.keys(tmpItem.properties).length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefList(tmpPath, tmpItem.properties));
+    }
+    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'items', item: tmpItem.items}));
+    }
+    if (tmpItem.items && utilFunc.getPropertyJsType(tmpItem.items).indexOf('Array') !== -1 && tmpItem.items.length > 0) {
+      tmpDefList = tmpDefList.concat(this.compuDefListArray(tmpPath, tmpItem.items));
+    }
+    if (tmpItem.additionalItems && utilFunc.getPropertyJsType(tmpItem.additionalItems).indexOf('Object') !== -1) {
+      tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
+    }
+    return tmpDefList;
   }
 
   // * ------------
@@ -607,7 +661,9 @@ class JsonSchema extends React.Component {
     if (!isEqual(this.state.JSONSchema, param.updated_src)) {
       this.setState({
         JSONSchema: param.updated_src
-      })
+      }, () => {
+        this.compuListPrepare();
+      });
     }
   }
 
@@ -630,6 +686,8 @@ class JsonSchema extends React.Component {
       return {
         UISchema: useUISchema
       }
+    }, () => {
+      this.compuListPrepare();
     });
   }
 
@@ -654,6 +712,8 @@ class JsonSchema extends React.Component {
       return {
         FormData: useFormData
       }
+    }, () => {
+      this.compuListPrepare();
     });
   }
 
@@ -666,7 +726,9 @@ class JsonSchema extends React.Component {
     if (!isEqual(this.state.JSONSchema, param.updated_src)) {
       this.setState({
         JSONSchema: param.updated_src
-      })
+      }, () => {
+        this.compuListPrepare();
+      });
     }
   }
 
@@ -690,6 +752,8 @@ class JsonSchema extends React.Component {
       return {
         UISchema: useUISchema
       }
+    }, () => {
+      this.compuListPrepare();
     });
   }
 
@@ -721,6 +785,21 @@ class JsonSchema extends React.Component {
       return {
         FormData: useFormData
       }
+    }, () => {
+      this.compuListPrepare();
+    });
+  }
+
+  // * ------------
+
+  resetAllData = () => {
+    this.setState({
+      JSONSchema: {},
+      UISchema: {},
+      FormData: {},
+      ownerList: [],
+      defList: [],
+      refList: []
     });
   }
 
@@ -744,6 +823,12 @@ class JsonSchema extends React.Component {
                 this.addNewDefinition
               } getPropertiesUISchema={
                 this.getPropertiesUISchema
+              } ownerList={
+                this.state.ownerList
+              } defList={
+                this.state.defList
+              } refList={
+                this.state.refList
               } />
             </div>
           </TabPane>
@@ -761,6 +846,12 @@ class JsonSchema extends React.Component {
                 this.addNewDefinition
               } getPropertiesUISchema={
                 this.getPropertiesUISchema
+              } ownerList={
+                this.state.ownerList
+              } defList={
+                this.state.defList
+              } refList={
+                this.state.refList
               } />
             </div>
           </TabPane>
@@ -778,6 +869,12 @@ class JsonSchema extends React.Component {
                 this.addNewDefinition
               } getPropertiesUISchema={
                 this.getPropertiesUISchema
+              } ownerList={
+                this.state.ownerList
+              } defList={
+                this.state.defList
+              } refList={
+                this.state.refList
               } />
             </div>
           </TabPane>
@@ -795,6 +892,12 @@ class JsonSchema extends React.Component {
                 this.addNewDefinition
               } getPropertiesUISchema={
                 this.getPropertiesUISchema
+              } ownerList={
+                this.state.ownerList
+              } defList={
+                this.state.defList
+              } refList={
+                this.state.refList
               } />
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
@@ -811,6 +914,12 @@ class JsonSchema extends React.Component {
                 this.addNewDefinition
               } getPropertiesUISchema={
                 this.getPropertiesUISchema
+              } ownerList={
+                this.state.ownerList
+              } defList={
+                this.state.defList
+              } refList={
+                this.state.refList
               } />
             </div>
           </TabPane>
@@ -827,6 +936,8 @@ class JsonSchema extends React.Component {
               this.deleteJsonSchemaData
             } addNewProperties={
               this.addNewProperties
+            } resetAllData={
+              this.resetAllData
             } />
           </TabPane>
           <TabPane tab="表单预览" key="7">
