@@ -162,6 +162,11 @@
 
 ## Change Log
 
+### 2018-02-23
+
+- 调整withCompuListHighOrder代码结构，将同类型属性列表的计算移动到jsonSchema文件
+- 调整各类型的creator
+
 ### 2018-02-22
 
 - 调整jsonSchema和withCompuListHighOrder等文件的代码结构，将owner、definition、$ref列表的计算同一处理
