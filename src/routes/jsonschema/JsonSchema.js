@@ -41,7 +41,8 @@ class JsonSchema extends React.Component {
     FormData: {},
     ownerList: [],
     defList: [],
-    refList: []
+    refList: [],
+    sameTypeListObj: {}
   }
 
   componentDidMount () {
@@ -56,10 +57,6 @@ class JsonSchema extends React.Component {
   }
 
   // * ------------
-
-  getPropertyJsType = (property) => {
-    return Object.prototype.toString.call(property);
-  }
 
   getRefRealPath = (refList) => {
     let resRef = '#';
@@ -499,10 +496,13 @@ class JsonSchema extends React.Component {
         tmpRefList.push(tmpDefList[index]);
       }
     }
+    let tmpSameTypeListObj = this.compuSameTypeList();
+    console.log('compuSameTypeList res:', tmpSameTypeListObj);
     this.setState({
       ownerList: tmpOwnerList,
       defList: tmpDefList,
-      refList: tmpRefList
+      refList: tmpRefList,
+      sameTypeListObj: tmpSameTypeListObj
     });
     // return {
     //   ownerList: tmpOwnerList,
@@ -648,6 +648,165 @@ class JsonSchema extends React.Component {
       tmpDefList = tmpDefList.concat(this.compuDefListObj(tmpPath, {key: 'additionalItems', item: tmpItem.additionalItems}));
     }
     return tmpDefList;
+  }
+
+  // * ------------
+
+  compuSameTypeList = (item) => {
+    let tmpListCol = {
+      tmpObjectList: [],
+      tmpArrayList: [],
+      tmpStringList: [],
+      tmpNumberList: [],
+      tmpBooleanList: []
+    };
+    let res = this.compuSameTypeListByType(this.state.JSONSchema);
+    tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+    tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+    tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+    tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+    tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+    return tmpListCol;
+  }
+
+  compuSameTypeListFromObject = (data) => {
+    let tmpListCol = {
+      tmpObjectList: [],
+      tmpArrayList: [],
+      tmpStringList: [],
+      tmpNumberList: [],
+      tmpBooleanList: []
+    };
+    if (data.properties && Object.keys(data.properties).length > 0) {
+      let propsList = Object.entries(data.properties);
+      for (let item of propsList) {
+        let res = this.compuSameTypeListByType(item[1]);
+        tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+        tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+        tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+        tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+        tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+      }
+    }
+    return tmpListCol;
+  }
+
+  compuSameTypeListFromArray = (data) => {
+    let tmpListCol = {
+      tmpObjectList: [],
+      tmpArrayList: [],
+      tmpStringList: [],
+      tmpNumberList: [],
+      tmpBooleanList: []
+    };
+    if (data.items && utilFunc.getPropertyJsType(data.items).indexOf('Array') !== -1 && data.items.length > 0) {
+      // * 如果items是数组并且长度大于0
+      let tmpLen = data.items.length;
+      for (let i = 0; i < tmpLen; i++) {
+        console.log('data.items[i]', data.items[i]);
+        let res = this.compuSameTypeListByType(data.items[i], {
+          itemsArray: true,
+          idx: i
+        });
+        tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+        tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+        tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+        tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+        tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+      }
+      // * 判断是否有additionalItems
+      if (data.additionalItems && utilFunc.getPropertyJsType(data.additionalItems).indexOf('Object') !== -1 && data.additionalItems.type) {
+        let res = this.compuSameTypeListByType(data.additionalItems, {
+          additionalItemsObject: true
+        });
+        tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+        tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+        tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+        tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+        tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+      }
+    } else if (data.items && utilFunc.getPropertyJsType(data.items).indexOf('Object') !== -1) {
+      let res = this.compuSameTypeListByType(data.items, {
+        itemsObject: true
+      });
+      tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+      tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+      tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+      tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+      tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+    }
+    return tmpListCol;
+  }
+
+  compuSameTypeListByType = (item, options = {}) => {
+    let tmpListCol = {
+      tmpObjectList: [],
+      tmpArrayList: [],
+      tmpStringList: [],
+      tmpNumberList: [],
+      tmpBooleanList: []
+    };
+    let res = null;
+
+    let tmpItem = {
+      ...item
+    };
+
+    let selfPath = '';
+    options.itemsArray && (selfPath = this.getItemsArrSchemaMemberSelfPath(item, options.idx));
+    options.itemsObject && (selfPath = this.getItemsObjSchemaMemberSelfPath(item));
+    options.additionalItemsObject && (selfPath = this.getadditionalItemsObjSchemaMemberSelfPath(item));
+    selfPath && (tmpItem.selfPath = selfPath);
+
+    let uis = this.getPropertiesUISchema(tmpItem);
+    tmpItem.ui = uis ? uis : {};
+
+    switch (item.type) {
+      case 'object':
+        tmpListCol.tmpObjectList.push(tmpItem);
+        console.log('object tmpObject', tmpItem);
+        res = this.compuSameTypeListFromObject(item);
+        break;
+      case 'array':
+        tmpListCol.tmpArrayList.push(tmpItem);
+        res = this.compuSameTypeListFromArray(item);
+        break;
+      case 'string':
+        tmpListCol.tmpStringList.push(tmpItem);
+        break;
+      case 'number':
+        tmpListCol.tmpNumberList.push(tmpItem);
+        break;
+      case 'boolean':
+        tmpListCol.tmpBooleanList.push(tmpItem);
+        break;
+      default:
+        break;
+    }
+    if (res) {
+      tmpListCol.tmpObjectList = tmpListCol.tmpObjectList.concat(res.tmpObjectList);
+      tmpListCol.tmpArrayList = tmpListCol.tmpArrayList.concat(res.tmpArrayList);
+      tmpListCol.tmpStringList = tmpListCol.tmpStringList.concat(res.tmpStringList);
+      tmpListCol.tmpNumberList = tmpListCol.tmpNumberList.concat(res.tmpNumberList);
+      tmpListCol.tmpBooleanList = tmpListCol.tmpBooleanList.concat(res.tmpBooleanList);
+    }
+    console.log('tmpListCol', tmpListCol);
+    return tmpListCol;
+  }
+
+  // * 如果是是在type为array类型的成员的子成员，固定key为items，items是数组
+  getItemsArrSchemaMemberSelfPath = (item, i) => {
+    return item.owner + '~/~items~/~' + i
+  }
+
+  // * 如果是是在type为array类型的成员的子成员，固定key为items，items是对象
+  getItemsObjSchemaMemberSelfPath = (item) => {
+    return item.owner + '~/~items'
+  }
+
+  // * 如果是是在type为array类型的成员的子成员，固定key为additionalItems，additionalItems是对象
+  getadditionalItemsObjSchemaMemberSelfPath = (item) => {
+    return item.owner + '~/~additionalItems'
   }
 
   // * ------------
@@ -799,7 +958,8 @@ class JsonSchema extends React.Component {
       FormData: {},
       ownerList: [],
       defList: [],
-      refList: []
+      refList: [],
+      sameTypeListObj: {}
     });
   }
 
@@ -821,14 +981,14 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              } getPropertiesUISchema={
-                this.getPropertiesUISchema
               } ownerList={
                 this.state.ownerList
               } defList={
                 this.state.defList
               } refList={
                 this.state.refList
+              } objectTypeList={
+                this.state.sameTypeListObj.tmpObjectList
               } />
             </div>
           </TabPane>
@@ -844,8 +1004,6 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              } getPropertiesUISchema={
-                this.getPropertiesUISchema
               } ownerList={
                 this.state.ownerList
               } defList={
@@ -867,8 +1025,6 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              } getPropertiesUISchema={
-                this.getPropertiesUISchema
               } ownerList={
                 this.state.ownerList
               } defList={
@@ -890,8 +1046,6 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              } getPropertiesUISchema={
-                this.getPropertiesUISchema
               } ownerList={
                 this.state.ownerList
               } defList={
@@ -912,14 +1066,14 @@ class JsonSchema extends React.Component {
                 this.state.JSONSchema.definitions
               } addNewDefinition={
                 this.addNewDefinition
-              } getPropertiesUISchema={
-                this.getPropertiesUISchema
               } ownerList={
                 this.state.ownerList
               } defList={
                 this.state.defList
               } refList={
                 this.state.refList
+              } arrayTypeList={
+                this.state.sameTypeListObj.tmpArrayList
               } />
             </div>
           </TabPane>

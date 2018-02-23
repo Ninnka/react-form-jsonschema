@@ -58,23 +58,23 @@ class ObjectSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
-    let res = nextProps.compuListPrepare(nextProps);
+    // let res = nextProps.compuListPrepare(nextProps);
     this.setState({
       ownerList: nextProps.ownerList ? nextProps.ownerList : [],
       defList: nextProps.defList ? nextProps.defList : [],
       refList: nextProps.refList ? nextProps.refList : [],
-      objectTypeList: res.sameTypeListObj.tmpObjectList
+      objectTypeList: nextProps.objectTypeList ? nextProps.objectTypeList : []
     });
   }
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
-    let res = this.props.compuListPrepare(this.props);
+    // let res = this.props.compuListPrepare(this.props);
     this.setState({
       ownerList: this.props.ownerList ? this.props.ownerList : [],
       defList: this.props.defList ? this.props.defList : [],
       refList: this.props.refList ? this.props.refList : [],
-      objectTypeList: res.sameTypeListObj.tmpObjectList
+      objectTypeList: this.props.objectTypeList ? this.props.objectTypeList : []
     });
   }
 
