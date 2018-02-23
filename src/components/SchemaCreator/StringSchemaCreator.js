@@ -64,23 +64,25 @@ class StringSchemaCreator extends React.Component {
   ]
 
   componentWillReceiveProps (nextProps) {
-    let res = nextProps.compuListPrepare(nextProps);
+    // let res = nextProps.compuListPrepare(nextProps);
     this.setState({
-      oownerList: nextProps.ownerList ? nextProps.ownerList : [],
+      ownerList: nextProps.ownerList ? nextProps.ownerList : [],
       defList: nextProps.defList ? nextProps.defList : [],
       refList: nextProps.refList ? nextProps.refList : [],
-      stringTypeList: res.sameTypeListObj.tmpStringList
+      stringTypeList: nextProps.stringTypeList ? nextProps.stringTypeList : []
     });
+    console.log(nextProps);
   }
 
   componentDidMount () {
-    let res = this.props.compuListPrepare(this.props);
+    // let res = this.props.compuListPrepare(this.props);
     this.setState({
       ownerList: this.props.ownerList ? this.props.ownerList : [],
       defList: this.props.defList ? this.props.defList : [],
       refList: this.props.refList ? this.props.refList : [],
-      stringTypeList: res.sameTypeListObj.tmpStringList
+      stringTypeList: this.props.stringTypeList ? this.props.stringTypeList : []
     });
+    console.log(this.props);
   }
 
   // * ------------
@@ -194,13 +196,14 @@ class StringSchemaCreator extends React.Component {
 
   ownerChange = (value) => {
     console.log('ownerChange value:', value);
+
     this.setState((prevState, props) => {
       return {
         stringSchema: {
           ...prevState.stringSchema,
-          owner: prevState.ownerList[value].path
+          owner: typeof value === 'number' ? prevState.ownerList[value].path : ''
         },
-        ownerTypeStatus: prevState.ownerList[value].type
+        ownerTypeStatus: typeof value === 'number' ? prevState.ownerList[value].type : ''
       };
     });
   }
@@ -632,7 +635,7 @@ class StringSchemaCreator extends React.Component {
         {
           !this.state.asDefinition &&
           <FormItem label="选择所属对象">
-            <Select allowClear value={ this.state.stringSchema.owner } onChange={ this.ownerChange }>
+            <Select disabled={this.state.asModify} allowClear value={ this.state.stringSchema.owner } onChange={ this.ownerChange }>
               {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (

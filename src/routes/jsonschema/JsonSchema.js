@@ -1010,7 +1010,9 @@ class JsonSchema extends React.Component {
                 this.state.defList
               } refList={
                 this.state.refList
-              } />
+              } stringTypeList={
+                this.state.sameTypeListObj.tmpStringList
+              }/>
             </div>
           </TabPane>
           <TabPane tab="创建Number" key="3">
@@ -1031,7 +1033,9 @@ class JsonSchema extends React.Component {
                 this.state.defList
               } refList={
                 this.state.refList
-              } />
+              } numberTypeList={
+                this.state.sameTypeListObj.tmpNumberList
+              }/>
             </div>
           </TabPane>
           <TabPane tab="创建Boolean" key="4">
@@ -1052,7 +1056,10 @@ class JsonSchema extends React.Component {
                 this.state.defList
               } refList={
                 this.state.refList
-              } />
+              } booleanTypeList={
+                this.state.sameTypeListObj.tmpBooleanList
+              }
+              />
             </div></TabPane>
           <TabPane tab="创建Array" key="5">
             <div className={ styles.jsonSchemaTabPane }>

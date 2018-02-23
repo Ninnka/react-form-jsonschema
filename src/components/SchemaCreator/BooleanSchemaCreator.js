@@ -48,27 +48,25 @@ class BooleanSchemaCreator extends React.Component {
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
     // this.compuListPrepare(nextProps);
-    let res = nextProps.compuListPrepare(nextProps);
+    // let res = nextProps.compuListPrepare(nextProps);
     this.setState({
       ownerList: nextProps.ownerList ? nextProps.ownerList : [],
       defList: nextProps.defList ? nextProps.defList : [],
       refList: nextProps.refList ? nextProps.refList : [],
-      booleanTypeList: res.sameTypeListObj.tmpBooleanList
+      booleanTypeList: nextProps.booleanTypeList ? nextProps.booleanTypeList : []
     });
-    console.log(res.sameTypeListObj);
   }
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
     // this.compuListPrepare(this.props);
-    let res = this.props.compuListPrepare(this.props);
+    // let res = this.props.compuListPrepare(this.props);
     this.setState({
       ownerList: this.props.ownerList ? this.props.ownerList : [],
       defList: this.props.defList ? this.props.defList : [],
       refList: this.props.refList ? this.props.refList : [],
-      booleanTypeList: res.sameTypeListObj.tmpBooleanList
+      booleanTypeList: this.props.booleanTypeList ? this.props.booleanTypeList : []
     });
-    console.log(res.sameTypeListObj);
   }
 
   resetForm = () => {
@@ -145,9 +143,9 @@ class BooleanSchemaCreator extends React.Component {
       return {
         booleanSchema: {
           ...prevState.booleanSchema,
-          owner: prevState.ownerList[value].path
+          owner: typeof value === 'number' ? prevState.ownerList[value].path : ''
         },
-        ownerTypeStatus: prevState.ownerList[value].type
+        ownerTypeStatus: typeof value === 'number' ? prevState.ownerList[value].type : ''
       };
     });
   }
@@ -450,7 +448,7 @@ class BooleanSchemaCreator extends React.Component {
         {
           !this.state.asCreateDefinition &&
           <FormItem label="选择所属对象">
-            <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange } disabled={this.state.asModify}>
+            <Select value={ this.state.booleanSchema.owner } onChange={ this.ownerChange } disabled={this.state.asModify} allowClear>
               {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (

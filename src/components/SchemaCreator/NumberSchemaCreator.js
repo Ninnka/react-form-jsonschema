@@ -59,23 +59,23 @@ class NumberSchemaCreator extends React.Component {
 
   componentWillReceiveProps (nextProps) {
     console.log('o nextProps', nextProps);
-    let res = nextProps.compuListPrepare(nextProps);
+    // let res = nextProps.compuListPrepare(nextProps);
     this.setState({
       ownerList: nextProps.ownerList ? nextProps.ownerList : [],
       defList: nextProps.defList ? nextProps.defList : [],
       refList: nextProps.refList ? nextProps.refList : [],
-      numberTypeList: res.sameTypeListObj.tmpNumberList
+      numberTypeList: nextProps.numberTypeList ? nextProps.numberTypeList : []
     });
   }
 
   componentDidMount () {
     console.log('o properties: ', this.props.properties);
-    let res = this.props.compuListPrepare(this.props);
+    // let res = this.props.compuListPrepare(this.props);
     this.setState({
       ownerList: this.props.ownerList ? this.props.ownerList : [],
       defList: this.props.defList ? this.props.defList : [],
       refList: this.props.refList ? this.props.refList : [],
-      numberTypeList: res.sameTypeListObj.tmpNumberList
+      numberTypeList: this.props.numberTypeList ? this.props.numberTypeList : []
     });
   }
 
@@ -207,9 +207,9 @@ class NumberSchemaCreator extends React.Component {
       return {
         numberSchema: {
           ...prevState.numberSchema,
-          owner: prevState.ownerList[value].path
+          owner: typeof value === 'number' ? prevState.ownerList[value].path : ''
         },
-        ownerTypeStatus: prevState.ownerList[value].type
+        ownerTypeStatus: typeof value === 'number' ? prevState.ownerList[value].type : ''
       };
     });
   }
@@ -698,7 +698,7 @@ class NumberSchemaCreator extends React.Component {
         {
           !this.state.asCreateDefinition &&
           <FormItem label="选择所属对象">
-            <Select allowClear value={ this.state.numberSchema.owner } onChange={ this.ownerChange }>
+            <Select allowClear value={ this.state.numberSchema.owner } onChange={ this.ownerChange } disabled={this.state.asModify}>
               {
                 this.state.ownerList.map((ele, index, arr) => {
                   return (
