@@ -58,9 +58,9 @@ const withCompuListHighOrder = (WrappedComponent) => {
         // defList: tmpDefList,
         // refList: tmpRefList,
         sameTypeListObj: res,
-        // ownerList: this.props.ownerList,
-        // defList: this.props.defList,
-        // refList: this.props.refList
+        ownerList: this.props.ownerList,
+        defList: this.props.defList,
+        refList: this.props.refList
       }
     }
 
